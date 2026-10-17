@@ -65,6 +65,34 @@ public class Operaciones {
     public List<Usuario> listar() {
         return(Consultar());
     }
+
+    @POST
+    @Path("/login")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public LoginResponse login(Usuario credenciales) {
+        String sql = "SELECT id_usuario, nombre_usuario, nombre_completo, rol "
+                + "FROM usuario WHERE nombre_usuario=? AND contrasena=?";
+        try {
+            con = cn.getConnection();
+            ps = con.prepareStatement(sql);
+            ps.setString(1, credenciales.getNombreUsuario());
+            ps.setString(2, credenciales.getContrasena());
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                return new LoginResponse(
+                        true,
+                        rs.getInt("id_usuario"),
+                        rs.getString("nombre_usuario"),
+                        rs.getString("nombre_completo"),
+                        rs.getString("rol"));
+            }
+            return new LoginResponse(false, 0, null, null, null);
+        } catch (Exception e) {
+            System.out.println("Error en login: " + e.getMessage());
+            return new LoginResponse(false, 0, null, null, null);
+        }
+    }
     
     // --- MÉTODO INSERT (CREAR) ---
     @POST

@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sanciones | Infracciones</title>
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    >
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet"
+    >
+    <link href="../css/theme.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" aria-label="Principal">
+        <div class="container">
+            <a class="navbar-brand" href="dashboard.html">
+                <span class="brand-mark" aria-hidden="true">
+                    <i class="bi bi-shield-check"></i>
+                </span>
+                Infracciones
+            </a>
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#menuPrincipal"
+                aria-controls="menuPrincipal"
+                aria-expanded="false"
+                aria-label="Abrir navegación"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav mx-lg-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a
+                            class="nav-link active"
+                            href="sanciones.html"
+                            aria-current="page"
+                        >
+                            Sanciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="usuarios.html">Usuarios</a>
+                    </li>
+                </ul>
+                <div class="session-actions d-flex align-items-center gap-3">
+                    <span class="session-user">
+                        <i class="bi bi-person-circle" aria-hidden="true"></i>
+                        <span data-nombre-usuario></span>
+                    </span>
+                    <button
+                        class="btn btn-outline-light btn-sm logout-btn"
+                        type="button"
+                        data-cerrar-sesion
+                    >
+                        <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
+                        Salir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="container">
+        <nav aria-label="Ruta de navegación">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="dashboard.html">Inicio</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Sanciones
+                </li>
+            </ol>
+        </nav>
+        <header class="page-heading">
+            <div>
+                <p class="eyebrow">Gestión de tránsito</p>
+                <h1>Catálogo de sanciones</h1>
+                <p class="page-description">
+                    Organiza las descripciones y los costos de las sanciones.
+                </p>
+            </div>
+            <div class="record-summary">
+                <span class="summary-icon" aria-hidden="true">
+                    <i class="bi bi-receipt-cutoff"></i>
+                </span>
+                <div>
+                    <span class="summary-value" id="totalSanciones">—</span>
+                    <span class="summary-label">Sanciones registradas</span>
+                </div>
+            </div>
+        </header>
+        <div id="alerta" role="alert" aria-live="polite"></div>
+        <section
+            class="panel editor-panel"
+            id="editorPanel"
+            aria-labelledby="formTitle"
+        >
+            <div class="section-heading">
+                <span class="section-icon" aria-hidden="true">
+                    <i class="bi bi-plus-lg" id="formIcon"></i>
+                </span>
+                <div>
+                    <h2 id="formTitle">Nueva sanción</h2>
+                    <p id="formSubtitle">
+                        Completa los datos para agregar una sanción al catálogo.
+                    </p>
+                </div>
+            </div>
+            <form id="sancionForm">
+                <fieldset id="formFields">
+                    <input type="hidden" id="idSancion">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-8">
+                            <label for="descripcion" class="form-label">
+                                Descripción
+                            </label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="descripcion"
+                                maxlength="200"
+                                placeholder="Ej. Estacionarse en una zona prohibida"
+                                aria-describedby="descripcionHelp"
+                                required
+                            >
+                            <div id="descripcionHelp" class="form-text">
+                                Máximo 200 caracteres.
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="costo" class="form-label">Costo</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Q</span>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    id="costo"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    aria-describedby="costoHelp"
+                                    required
+                                >
+                            </div>
+                            <div id="costoHelp" class="form-text">
+                                Importe en pesos mexicanos.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button
+                            class="btn btn-neutral"
+                            id="cancelar"
+                            type="button"
+                        >
+                            Limpiar
+                        </button>
+                        <button
+                            class="btn btn-primary"
+                            id="guardar"
+                            type="submit"
+                        >
+                            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+                            Guardar sanción
+                        </button>
+                    </div>
+                </fieldset>
+            </form>
+        </section>
+        <section class="panel" aria-labelledby="listTitle">
+            <div class="table-toolbar">
+                <div class="table-title-group">
+                    <h2 class="table-title" id="listTitle">
+                        Sanciones registradas
+                    </h2>
+                    <span class="count-badge" id="listCount">—</span>
+                </div>
+                <div class="toolbar-controls">
+                    <div class="search-box">
+                        <label for="buscar" class="visually-hidden">
+                            Buscar por descripción o ID
+                        </label>
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <input
+                            type="search"
+                            class="form-control"
+                            id="buscar"
+                            placeholder="Buscar por descripción o ID…"
+                        >
+                    </div>
+                    <label for="ordenar" class="visually-hidden">
+                        Ordenar sanciones
+                    </label>
+                    <select id="ordenar" class="form-select sort-select">
+                        <option value="id-desc">ID: mayor primero</option>
+                        <option value="id-asc">ID: menor primero</option>
+                        <option value="descripcion">Descripción: A–Z</option>
+                        <option value="costo-asc">Costo: menor primero</option>
+                        <option value="costo-desc">Costo: mayor primero</option>
+                    </select>
+                    <button
+                        type="button"
+                        class="btn btn-neutral refresh-btn"
+                        id="recargar"
+                        aria-label="Actualizar listado"
+                        title="Actualizar listado"
+                    >
+                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            <div
+                class="table-responsive"
+                role="region"
+                aria-label="Tabla de sanciones, desplazable horizontalmente"
+                tabindex="0"
+            >
+                <table class="table table-hover align-middle">
+                    <caption class="visually-hidden">
+                        Catálogo de sanciones con descripción, costo y acciones.
+                    </caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Descripción</th>
+                            <th scope="col" class="text-end">Costo</th>
+                            <th scope="col" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sancionesBody"></tbody>
+                </table>
+            </div>
+            <div
+                class="table-footer"
+                id="resultados"
+                role="status"
+                aria-live="polite"
+            >
+                Cargando catálogo…
+            </div>
+        </section>
+        <footer class="page-footer">
+            Sistema de gestión de infracciones de tránsito
+        </footer>
+    </main>
+    <div
+        class="modal fade"
+        id="eliminarModal"
+        tabindex="-1"
+        aria-labelledby="eliminarTitle"
+        aria-describedby="eliminarHelp"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="eliminarTitle">
+                        ¿Eliminar esta sanción?
+                    </h2>
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"
+                        id="cerrarEliminar"
+                    ></button>
+                </div>
+                <div class="modal-body">
+                    <p id="eliminarHelp" class="text-secondary small">
+                        La sanción se quitará del catálogo.
+                        Esta acción no se puede deshacer desde esta pantalla.
+                    </p>
+                    <div class="delete-preview" id="eliminarDescripcion"></div>
+                    <div id="alertaEliminar" class="mt-3" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-neutral"
+                        data-bs-dismiss="modal"
+                        id="cancelarEliminar"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        id="confirmarEliminar"
+                    >
+                        Eliminar sanción
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"
+    ></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        inicializarSesion();
+        const form = document.getElementById("sancionForm");
+        const body = document.getElementById("sancionesBody");
+        const alerta = document.getElementById("alerta");
+        const formFields = document.getElementById("formFields");
+        const campoId = document.getElementById("idSancion");
+        const descripcion = document.getElementById("descripcion");
+        const costo = document.getElementById("costo");
+        const guardar = document.getElementById("guardar");
+        const cancelar = document.getElementById("cancelar");
+        const buscar = document.getElementById("buscar");
+        const ordenar = document.getElementById("ordenar");
+        const recargar = document.getElementById("recargar");
+        const resultados = document.getElementById("resultados");
+        const totalSanciones = document.getElementById("totalSanciones");
+        const listCount = document.getElementById("listCount");
+        const editorPanel = document.getElementById("editorPanel");
+        const modalElement = document.getElementById("eliminarModal");
+        const eliminarModal = new bootstrap.Modal(modalElement, {
+            backdrop: "static",
+            keyboard: false
+        });
+        const confirmarEliminar = document.getElementById("confirmarEliminar");
+        const cancelarEliminar = document.getElementById("cancelarEliminar");
+        const cerrarEliminar = document.getElementById("cerrarEliminar");
+        const alertaEliminar = document.getElementById("alertaEliminar");
+        const moneda = new Intl.NumberFormat("es-GT", {
+            style: "currency",
+            currency: "GTQ"
+        });
+        let sanciones = [];
+        let cargando = false;
+        let ocupado = false;
+        let errorCarga = false;
+        let pendienteEliminar = null;
+        function mostrarAlerta(contenedor, mensaje, tipo = "danger") {
+            const elemento = document.createElement("div");
+            elemento.className = `alert alert-${tipo}`;
+            elemento.textContent = mensaje;
+            contenedor.replaceChildren(elemento);
+        }
+        function mensajeError(error) {
+            return error instanceof Error
+                ? error.message
+                : "Ocurrió un error. Inténtalo nuevamente.";
+        }
+        function actualizarTituloFormulario() {
+            const editando = campoId.value !== "";
+            document.getElementById("formTitle").textContent =
+                editando ? "Editar sanción" : "Nueva sanción";
+            document.getElementById("formSubtitle").textContent =
+                editando
+                    ? `Modifica los datos de la sanción #${campoId.value}.`
+                    : "Completa los datos para agregar una sanción al catálogo.";
+            document.getElementById("formIcon").className =
+                editando ? "bi bi-pencil-square" : "bi bi-plus-lg";
+            editorPanel.classList.toggle("is-editing", editando);
+            cancelar.textContent = editando ? "Cancelar edición" : "Limpiar";
+            guardar.innerHTML = editando
+                ? '<i class="bi bi-check2 me-1" aria-hidden="true"></i> Guardar cambios'
+                : '<i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Guardar sanción';
+        }
+        function limpiar() {
+            form.reset();
+            campoId.value = "";
+            actualizarTituloFormulario();
+        }
+        function sincronizarControles() {
+            formFields.disabled = ocupado;
+            recargar.disabled = ocupado || cargando;
+            body.querySelectorAll("button").forEach(boton => {
+                boton.disabled = ocupado || cargando;
+            });
+        }
+        function mostrarEstado(icono, titulo, detalle) {
+            const fila = document.createElement("tr");
+            const celda = document.createElement("td");
+            celda.colSpan = 4;
+            celda.className = "state-cell";
+            const icon = document.createElement("i");
+            icon.className = `bi ${icono} state-icon`;
+            icon.setAttribute("aria-hidden", "true");
+            const encabezado = document.createElement("div");
+            encabezado.className = "state-title";
+            encabezado.textContent = titulo;
+            const texto = document.createElement("p");
+            texto.className = "state-description";
+            texto.textContent = detalle;
+            celda.append(icon, encabezado, texto);
+            fila.append(celda);
+            body.replaceChildren(fila);
+        }
+        function crearBotonAccion(tipo, id, texto, icono) {
+            const boton = document.createElement("button");
+            boton.type = "button";
+            boton.className = `btn row-action ${tipo}-btn`;
+            boton.dataset.accion = tipo;
+            boton.dataset.id = String(id);
+            boton.setAttribute("aria-label", `${texto} sanción ${id}`);
+            const icon = document.createElement("i");
+            icon.className = `bi ${icono} me-1`;
+            icon.setAttribute("aria-hidden", "true");
+            boton.append(icon, document.createTextNode(texto));
+            return boton;
+        }
+        function renderizar() {
+            if (cargando) {
+                mostrarEstado(
+                    "bi-hourglass-split",
+                    "Cargando sanciones",
+                    "Estamos consultando el catálogo."
+                );
+                resultados.textContent = "Cargando catálogo…";
+                listCount.textContent = "—";
+                return;
+            }
+            if (errorCarga) {
+                mostrarEstado(
+                    "bi-exclamation-circle",
+                    "No se pudo cargar el catálogo",
+                    "Utiliza el botón de actualizar para volver a intentarlo."
+                );
+                resultados.textContent = "Listado no disponible.";
+                listCount.textContent = "—";
+                totalSanciones.textContent = "—";
+                return;
+            }
+            const consulta = buscar.value.trim().toLocaleLowerCase("es");
+            const filtradas = sanciones.filter(item =>
+                String(item.idSancion).includes(consulta) ||
+                String(item.descripcion ?? "")
+                    .toLocaleLowerCase("es")
+                    .includes(consulta)
+            );
+            filtradas.sort((a, b) => {
+                switch (ordenar.value) {
+                    case "id-asc":
+                        return Number(a.idSancion) - Number(b.idSancion);
+                    case "descripcion":
+                        return String(a.descripcion ?? "").localeCompare(
+                            String(b.descripcion ?? ""),
+                            "es",
+                            { sensitivity: "base" }
+                        );
+                    case "costo-asc":
+                        return Number(a.costo) - Number(b.costo);
+                    case "costo-desc":
+                        return Number(b.costo) - Number(a.costo);
+                    default:
+                        return Number(b.idSancion) - Number(a.idSancion);
+                }
+            });
+            totalSanciones.textContent = String(sanciones.length);
+            listCount.textContent = String(filtradas.length);
+            resultados.textContent =
+                `Mostrando ${filtradas.length} de ${sanciones.length} sanciones`;
+            if (!filtradas.length) {
+                mostrarEstado(
+                    consulta ? "bi-search" : "bi-receipt",
+                    consulta ? "Sin coincidencias" : "Tu catálogo está vacío",
+                    consulta
+                        ? "Prueba con otra descripción o ID."
+                        : "Agrega tu primera sanción con el formulario superior."
+                );
+                return;
+            }
+            const fragmento = document.createDocumentFragment();
+            filtradas.forEach(sancion => {
+                const fila = document.createElement("tr");
+                const id = document.createElement("td");
+                id.className = "id-cell";
+                id.textContent = `#${sancion.idSancion}`;
+                const detalle = document.createElement("td");
+                detalle.className = "description-cell";
+                detalle.textContent = sancion.descripcion ?? "";
+                const importe = document.createElement("td");
+                importe.className = "cost-cell text-end";
+                importe.textContent = Number.isFinite(Number(sancion.costo))
+                    ? moneda.format(Number(sancion.costo))
+                    : "No disponible";
+                const acciones = document.createElement("td");
+                const grupo = document.createElement("div");
+                grupo.className = "row-actions";
+                grupo.append(
+                    crearBotonAccion(
+                        "edit",
+                        sancion.idSancion,
+                        "Editar",
+                        "bi-pencil"
+                    ),
+                    crearBotonAccion(
+                        "delete",
+                        sancion.idSancion,
+                        "Eliminar",
+                        "bi-trash3"
+                    )
+                );
+                acciones.append(grupo);
+                fila.append(id, detalle, importe, acciones);
+                fragmento.append(fila);
+            });
+            body.replaceChildren(fragmento);
+            sincronizarControles();
+        }
+        async function cargar() {
+            if (cargando) return false;
+            cargando = true;
+            errorCarga = false;
+            body.setAttribute("aria-busy", "true");
+            renderizar();
+            sincronizarControles();
+            try {
+                const datos = await solicitarAPI("listarSancion");
+                if (!Array.isArray(datos)) {
+                    throw new Error(
+                        "El servidor devolvió un listado no válido."
+                    );
+                }
+                sanciones = datos;
+                return true;
+            } catch (error) {
+                errorCarga = true;
+                mostrarAlerta(
+                    alerta,
+                    `No se pudo actualizar el listado. ${mensajeError(error)}`
+                );
+                return false;
+            } finally {
+                cargando = false;
+                body.removeAttribute("aria-busy");
+                renderizar();
+                sincronizarControles();
+            }
+        }
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            if (ocupado) return;
+            const id = campoId.value;
+            const texto = descripcion.value.trim();
+            const importe = Number(costo.value);
+            if (!texto) {
+                mostrarAlerta(alerta, "Ingresa una descripción válida.");
+                descripcion.focus();
+                return;
+            }
+            if (
+                costo.value.trim() === "" ||
+                !Number.isFinite(importe) ||
+                importe < 0
+            ) {
+                mostrarAlerta(alerta, "Ingresa un costo válido, mayor o igual a cero.");
+                costo.focus();
+                return;
+            }
+            ocupado = true;
+            alerta.replaceChildren();
+            sincronizarControles();
+            guardar.textContent = id ? "Actualizando…" : "Guardando…";
+            try {
+                const resultado = await solicitarAPI(
+                    id ? "actualizarSancion" : "agregarSancion",
+                    {
+                        method: id ? "PUT" : "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            idSancion: id ? Number(id) : 0,
+                            descripcion: texto,
+                            costo: importe
+                        })
+                    }
+                );
+                if (resultado !== 1) {
+                    throw new Error("La operación no fue confirmada.");
+                }
+                limpiar();
+                mostrarAlerta(
+                    alerta,
+                    id
+                        ? "Los cambios se guardaron correctamente."
+                        : "La sanción se agregó al catálogo.",
+                    "success"
+                );
+                // Un fallo al refrescar no se presenta como fallo al guardar.
+                await cargar();
+            } catch (error) {
+                mostrarAlerta(alerta, mensajeError(error));
+            } finally {
+                ocupado = false;
+                actualizarTituloFormulario();
+                sincronizarControles();
+            }
+        });
+        cancelar.addEventListener("click", () => {
+            if (!ocupado) limpiar();
+        });
+        buscar.addEventListener("input", renderizar);
+        ordenar.addEventListener("change", renderizar);
+        recargar.addEventListener("click", () => {
+            if (ocupado || cargando) return;
+            alerta.replaceChildren();
+            cargar();
+        });
+        body.addEventListener("click", event => {
+            const boton = event.target.closest("button[data-accion]");
+            if (!boton || ocupado || cargando) return;
+            const sancion = sanciones.find(item =>
+                String(item.idSancion) === boton.dataset.id
+            );
+            if (!sancion) return;
+            if (boton.dataset.accion === "edit") {
+                campoId.value = sancion.idSancion;
+                descripcion.value = sancion.descripcion ?? "";
+                costo.value = sancion.costo;
+                actualizarTituloFormulario();
+                editorPanel.scrollIntoView({
+                    behavior: window.matchMedia(
+                        "(prefers-reduced-motion: reduce)"
+                    ).matches ? "auto" : "smooth",
+                    block: "center"
+                });
+                descripcion.focus({ preventScroll: true });
+                return;
+            }
+            pendienteEliminar = sancion.idSancion;
+            document.getElementById("eliminarDescripcion").textContent =
+                `#${sancion.idSancion} — ${sancion.descripcion ?? ""}`;
+            alertaEliminar.replaceChildren();
+            eliminarModal.show();
+        });
+        modalElement.addEventListener("shown.bs.modal", () => {
+            cancelarEliminar.focus();
+        });
+        modalElement.addEventListener("hidden.bs.modal", () => {
+            pendienteEliminar = null;
+            alertaEliminar.replaceChildren();
+        });
+        confirmarEliminar.addEventListener("click", async () => {
+            if (pendienteEliminar === null || ocupado) return;
+            const id = pendienteEliminar;
+            ocupado = true;
+            sincronizarControles();
+            confirmarEliminar.disabled = true;
+            cancelarEliminar.disabled = true;
+            cerrarEliminar.disabled = true;
+            confirmarEliminar.textContent = "Eliminando…";
+            alertaEliminar.replaceChildren();
+            try {
+                const resultado = await solicitarAPI(
+                    `eliminarSancion/${encodeURIComponent(id)}`,
+                    { method: "DELETE" }
+                );
+                if (resultado !== 1) {
+                    throw new Error("La operación no fue confirmada.");
+                }
+                if (String(campoId.value) === String(id)) {
+                    limpiar();
+                }
+                eliminarModal.hide();
+                mostrarAlerta(
+                    alerta,
+                    "La sanción se eliminó correctamente.",
+                    "success"
+                );
+                await cargar();
+            } catch (error) {
+                mostrarAlerta(alertaEliminar, mensajeError(error));
+            } finally {
+                ocupado = false;
+                confirmarEliminar.disabled = false;
+                cancelarEliminar.disabled = false;
+                cerrarEliminar.disabled = false;
+                confirmarEliminar.textContent = "Eliminar sanción";
+                sincronizarControles();
+            }
+        });
+        cargar();
+    </script>
+</body>
+</html>
