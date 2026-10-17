@@ -4,10 +4,11 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Conexion.java</file>
+            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/ApplicationConfig.java</file>
             <file>file:/C:/Proyectos/infracciones1/src/java/servicio/NewMain.java</file>
             <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Operaciones.java</file>
             <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Usuario.java</file>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/ApplicationConfig.java</file>
+            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Sancion.java</file>
         </group>
     </open-files>
 </project-private>
