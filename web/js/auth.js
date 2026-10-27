@@ -17,9 +17,19 @@ function inicializarSesion() {
         elemento.textContent = usuario.rol || "Usuario";
     });
     document.querySelectorAll("[data-cerrar-sesion]").forEach(elemento => {
-        elemento.addEventListener("click", () => {
+        elemento.addEventListener("click", async () => {
+            elemento.disabled = true;
+            try {
+                await fetch("../webresources/auth/google/logout", {
+                    method: "GET",
+                    cache: "no-store",
+                    credentials: "same-origin"
+                });
+            } catch (error) {
+                console.error("No se pudo cerrar la sesión del servidor.", error);
+            }
             sessionStorage.removeItem("usuarioSesion");
-            window.location.href = "../index.html";
+            window.location.replace("../index.html");
         });
     });
 }

@@ -3,12 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Conexion.java</file>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/ApplicationConfig.java</file>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/NewMain.java</file>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Operaciones.java</file>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Usuario.java</file>
-            <file>file:/C:/Proyectos/infracciones1/src/java/servicio/Sancion.java</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/src/java/servicio/Usuario.java</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/src/java/controlador/controlador.java</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/web/index.html</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/web/vistas/dashboard.html</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/web/vistas/sanciones.html</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/web/vistas/usuarios.html</file>
+            <file>file:/C:/Users/Jennc/Progra/Infracciones/infracciones1/infracciones1/web/index.jsp</file>
         </group>
     </open-files>
 </project-private>

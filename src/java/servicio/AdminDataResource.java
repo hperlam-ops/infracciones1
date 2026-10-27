@@ -1,0 +1,171 @@
+package servicio;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+@Path("admin")
+@Produces(MediaType.APPLICATION_JSON)
+public class AdminDataResource {
+
+    @Context private HttpServletRequest request;
+
+    @GET @Path("conductores")
+    public Response conductores() {
+        return consulta("SELECT id_conductor,nombre,apellido,dpi,licencia,telefono,direccion "
+                + "FROM conductor ORDER BY apellido,nombre", "conductores");
+    }
+
+    @GET @Path("vehiculos")
+    public Response vehiculos() {
+        return consulta("SELECT v.id_vehiculo,v.placa,v.marca,v.modelo,v.color,"
+                + "v.id_tipo_vehiculo,t.nombre AS tipo FROM vehiculo v "
+                + "LEFT JOIN tipo_vehiculo t ON t.id_tipo_vehiculo=v.id_tipo_vehiculo "
+                + "ORDER BY v.placa", "vehiculos");
+    }
+
+    @GET @Path("tipos-vehiculo")
+    public Response tiposVehiculo() {
+        return consulta("SELECT id_tipo_vehiculo,nombre FROM tipo_vehiculo ORDER BY nombre", "tipos");
+    }
+
+    @POST @Path("conductores") @Consumes(MediaType.APPLICATION_JSON)
+    public Response crearConductor(String body) {
+        return ejecutar(body, "INSERT INTO conductor (nombre,apellido,dpi,licencia,telefono,direccion) "
+                + "VALUES (?,?,?,?,?,?)", "conductor");
+    }
+
+    @PUT @Path("conductores/{id}") @Consumes(MediaType.APPLICATION_JSON)
+    public Response editarConductor(@PathParam("id") int id, String body) {
+        return ejecutar(body, "UPDATE conductor SET nombre=?,apellido=?,dpi=?,licencia=?,telefono=?,direccion=? "
+                + "WHERE id_conductor=?", "conductor", id);
+    }
+
+    @DELETE @Path("conductores/{id}")
+    public Response eliminarConductor(@PathParam("id") int id) {
+        return eliminar("DELETE FROM conductor WHERE id_conductor=?", id, "conductor");
+    }
+
+    @POST @Path("vehiculos") @Consumes(MediaType.APPLICATION_JSON)
+    public Response crearVehiculo(String body) {
+        return ejecutar(body, "INSERT INTO vehiculo (placa,marca,modelo,color,id_tipo_vehiculo) "
+                + "VALUES (?,?,?,?,?)", "vehiculo");
+    }
+
+    @PUT @Path("vehiculos/{id}") @Consumes(MediaType.APPLICATION_JSON)
+    public Response editarVehiculo(@PathParam("id") int id, String body) {
+        return ejecutar(body, "UPDATE vehiculo SET placa=?,marca=?,modelo=?,color=?,id_tipo_vehiculo=? "
+                + "WHERE id_vehiculo=?", "vehiculo", id);
+    }
+
+    @DELETE @Path("vehiculos/{id}")
+    public Response eliminarVehiculo(@PathParam("id") int id) {
+        return eliminar("DELETE FROM vehiculo WHERE id_vehiculo=?", id, "vehiculo");
+    }
+
+    @PUT @Path("usuarios/{id}") @Consumes(MediaType.APPLICATION_JSON)
+    public Response editarUsuario(@PathParam("id") int id, String body) {
+        if (!admin()) return forbidden();
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body));
+                Connection c = connection()) {
+            JsonObject data = reader.readObject();
+            String password = data.getString("contrasena", "");
+            String sql = password.isEmpty()
+                    ? "UPDATE usuario SET nombre_usuario=?,nombre_completo=?,rol=? WHERE id_usuario=?"
+                    : "UPDATE usuario SET nombre_usuario=?,contrasena=?,nombre_completo=?,rol=? WHERE id_usuario=?";
+            try (PreparedStatement p = c.prepareStatement(sql)) {
+                p.setString(1, data.getString("nombreUsuario"));
+                int offset = 2;
+                if (!password.isEmpty()) p.setString(offset++, password);
+                p.setString(offset++, data.getString("nombreCompleto"));
+                p.setString(offset++, data.getString("rol"));
+                p.setInt(offset, id);
+                p.executeUpdate();
+                return Response.ok().build();
+            }
+        } catch (Exception ex) {
+            return error("No se pudo actualizar el usuario.");
+        }
+    }
+
+    private Response consulta(String sql, String key) {
+        if (!admin()) return forbidden();
+        try (Connection c = connection(); PreparedStatement p = c.prepareStatement(sql);
+                ResultSet r = p.executeQuery()) {
+            List<JsonObject> rows = new ArrayList<>();
+            while (r.next()) {
+                javax.json.JsonObjectBuilder b = Json.createObjectBuilder();
+                for (int i = 1; i <= r.getMetaData().getColumnCount(); i++) {
+                    Object value = r.getObject(i);
+                    if (value == null) b.add(r.getMetaData().getColumnLabel(i), "");
+                    else if (value instanceof Number) b.add(r.getMetaData().getColumnLabel(i), ((Number) value).doubleValue());
+                    else b.add(r.getMetaData().getColumnLabel(i), String.valueOf(value));
+                }
+                rows.add(b.build());
+            }
+            javax.json.JsonArrayBuilder array = Json.createArrayBuilder();
+            rows.forEach(array::add);
+            return Response.ok(Json.createObjectBuilder().add(key, array).build()).build();
+        } catch (Exception ex) {
+            return error("No se pudieron cargar los datos.");
+        }
+    }
+
+    private Response ejecutar(String body, String sql, String tipo, int... id) {
+        if (!admin()) return forbidden();
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body));
+                Connection c = connection(); PreparedStatement p = c.prepareStatement(sql)) {
+            JsonObject d = reader.readObject();
+            if ("conductor".equals(tipo)) {
+                p.setString(1,d.getString("nombre")); p.setString(2,d.getString("apellido"));
+                p.setString(3,d.getString("dpi")); p.setString(4,d.getString("licencia"));
+                p.setString(5,d.getString("telefono")); p.setString(6,d.getString("direccion"));
+            } else {
+                p.setString(1,d.getString("placa")); p.setString(2,d.getString("marca"));
+                p.setString(3,d.getString("modelo")); p.setString(4,d.getString("color"));
+                p.setInt(5,d.getInt("idTipoVehiculo"));
+            }
+            if (id.length > 0) p.setInt(6,id[0]);
+            p.executeUpdate(); return Response.ok().build();
+        } catch (Exception ex) { return error("No se pudo guardar el " + tipo + "."); }
+    }
+
+    private Response eliminar(String sql, int id, String tipo) {
+        if (!admin()) return forbidden();
+        try (Connection c=connection(); PreparedStatement p=c.prepareStatement(sql)) {
+            p.setInt(1,id); p.executeUpdate(); return Response.noContent().build();
+        } catch (Exception ex) { return error("No se pudo eliminar el " + tipo + ". Puede tener infracciones relacionadas."); }
+    }
+
+    private Connection connection() throws Exception {
+        Connection c = new Conexion().getConnection();
+        if (c == null) throw new IllegalStateException("Sin conexión.");
+        return c;
+    }
+    private boolean admin() {
+        HttpSession s=request.getSession(false);
+        if (s==null) return false; LoginResponse u=(LoginResponse)s.getAttribute("googleAuthenticatedUser");
+        if (u==null || u.getRol()==null) return false; String r=u.getRol().trim().toUpperCase();
+        return "ADMIN".equals(r)||"ADMINISTRADOR".equals(r)||"ADMINISTRADOR GENERAL".equals(r);
+    }
+    private Response forbidden(){return Response.status(Response.Status.FORBIDDEN).build();}
+    private Response error(String message){return Response.serverError().entity(Json.createObjectBuilder().add("mensaje",message).build()).build();}
+}

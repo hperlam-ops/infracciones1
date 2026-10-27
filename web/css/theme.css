@@ -409,6 +409,35 @@
             border-radius: 12px;
             color: #8cb7ff;
         }
+
+        .brand-logo {
+            display: block;
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .brand-icon .brand-logo,
+        .brand-icon .login-logo,
+        .login-logo {
+            display: block;
+            width: 36px;
+            height: 36px;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            object-position: center;
+            flex: 0 0 auto;
+        }
+
+        .brand-panel .brand-icon {
+            overflow: hidden;
+        }
+
+        .mobile-brand .brand-icon .login-logo {
+            width: 36px;
+            height: 36px;
+        }
         .navbar-brand {
             display: flex;
             align-items: center;
@@ -427,6 +456,24 @@
         .navbar .nav-link.active {
             color: white;
             background: #ffffff12;
+        }
+        .navbar .dropdown-menu {
+            min-width: 13rem;
+            border: 1px solid #29425f;
+            border-radius: 12px;
+            background: #10243a;
+            box-shadow: 0 12px 28px #07172740;
+        }
+        .navbar .dropdown-item {
+            padding: 9px 14px;
+            border-radius: 8px;
+            color: #b8c7d9;
+            font-size: .9rem;
+        }
+        .navbar .dropdown-item:hover,
+        .navbar .dropdown-item:focus {
+            background: #ffffff12;
+            color: white;
         }
         .session-user {
             display: flex;
@@ -1115,4 +1162,3 @@
                 scroll-behavior: auto !important;
             }
         }
-

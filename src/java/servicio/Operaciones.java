@@ -19,6 +19,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * REST Web Service
@@ -34,6 +35,9 @@ public class Operaciones {
 
     @Context
     private UriInfo context;
+
+    @Context
+    private HttpServletRequest request;
 
     public List<Usuario> Consultar() {
         List<Usuario> lista = new ArrayList<>();
@@ -80,12 +84,15 @@ public class Operaciones {
             ps.setString(2, credenciales.getContrasena());
             rs = ps.executeQuery();
             if (rs.next()) {
-                return new LoginResponse(
+                LoginResponse respuesta = new LoginResponse(
                         true,
                         rs.getInt("id_usuario"),
                         rs.getString("nombre_usuario"),
                         rs.getString("nombre_completo"),
                         rs.getString("rol"));
+                request.getSession(true).setAttribute(
+                        "googleAuthenticatedUser", respuesta);
+                return respuesta;
             }
             return new LoginResponse(false, 0, null, null, null);
         } catch (Exception e) {

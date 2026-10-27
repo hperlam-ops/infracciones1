@@ -27,7 +27,10 @@ public class ApplicationConfig extends Application {
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(servicio.Operaciones.class);
+        resources.add(servicio.GoogleAuthResource.class);
+        resources.add(servicio.PortalUsuarioResource.class);
+        resources.add(servicio.InfraccionesResource.class);
+        resources.add(servicio.AdminDataResource.class);
     }
     
 }
-

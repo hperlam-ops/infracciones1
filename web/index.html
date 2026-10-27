@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iniciar sesión | Infracciones</title>
+    <link rel="icon" type="image/png" href="img/logo.png?v=20261026">
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
@@ -21,7 +22,7 @@
         <aside class="brand-panel" aria-label="Acerca del sistema">
             <div class="brand">
                 <span class="brand-icon" aria-hidden="true">
-                    <i class="bi bi-shield-check"></i>
+                    <img class="login-logo" src="img/logo.png?v=20261026" alt="">
                 </span>
                 Infracciones
             </div>
@@ -62,7 +63,7 @@
             <div class="login-content">
                 <div class="brand mobile-brand">
                     <span class="brand-icon" aria-hidden="true">
-                        <i class="bi bi-shield-check"></i>
+                        <img class="login-logo" src="img/logo.png?v=20261026" alt="">
                     </span>
                     Infracciones
                 </div>
@@ -72,11 +73,9 @@
                     Te damos la bienvenida. Ingresa tus credenciales
                     para acceder al sistema.
                 </p>
-                <button
+                <a
                     class="google-btn"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#googleModal"
+                    href="webresources/auth/google/start"
                 >
                     <span class="google-symbol" aria-hidden="true">
                         <svg viewBox="0 0 48 48" focusable="false">
@@ -87,7 +86,7 @@
                         </svg>
                     </span>
                     Continuar con Google
-                </button>
+                </a>
                 <div class="divider">o ingresa con tu usuario</div>
                 <div id="alertaLogin" role="alert" aria-live="polite"></div>
                 <form id="loginForm">
@@ -353,6 +352,46 @@
             alerta.textContent = mensaje;
             contenedor.replaceChildren(alerta);
         }
+        async function procesarRespuestaGoogle() {
+            const parametros = new URLSearchParams(window.location.search);
+            const resultado = parametros.get("google");
+            if (resultado === "error") {
+                mostrarAlerta(
+                    alertaLogin,
+                    parametros.get("message") || "No se pudo iniciar sesión con Google."
+                );
+                window.history.replaceState({}, document.title, "index.html");
+                return;
+            }
+            if (resultado !== "success") return;
+            try {
+                const respuesta = await fetch("webresources/auth/google/session", {
+                    headers: { "Accept": "application/json" }
+                });
+                if (!respuesta.ok) {
+                    throw new Error("No se pudo recuperar la sesión de Google.");
+                }
+                const usuario = await respuesta.json();
+                sessionStorage.setItem("usuarioSesion", JSON.stringify(usuario));
+                redirigirSegunRol(usuario);
+            } catch (error) {
+                mostrarAlerta(
+                    alertaLogin,
+                    error instanceof Error
+                        ? error.message
+                        : "No se pudo completar el inicio de sesión."
+                );
+            }
+            function redirigirSegunRol(usuario) {
+                const rol = String(usuario.rol || "").trim().toUpperCase();
+                const esAdmin = ["ADMIN", "ADMINISTRADOR", "ADMINISTRADOR GENERAL"].includes(rol);
+                const destino = esAdmin
+                    ? "vistas/dashboard.html"
+                    : "vistas/portal-usuario.html";
+                window.location.href = destino;
+            }
+        }
+        procesarRespuestaGoogle();
         togglePassword.addEventListener("click", () => {
             const mostrar = campoContrasena.type === "password";
             campoContrasena.type = mostrar ? "text" : "password";
@@ -469,7 +508,7 @@
                     "usuarioSesion",
                     JSON.stringify(datosSesion)
                 );
-                window.location.href = "vistas/dashboard.html";
+                redirigirSegunRol(datosSesion);
             } catch (error) {
                 let mensaje = "Ocurrió un error al iniciar sesión.";
                 if (error.name === "AbortError") {
