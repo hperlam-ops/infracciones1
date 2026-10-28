@@ -51,18 +51,20 @@
 
         <main class="container">
             <div class="breadcrumb-label"><i class="bi bi-person-vcard me-1" aria-hidden="true"></i>
-                Panel de administración <span aria-hidden="true">/</span> <span class="text-dark">Conductores</span>
+                Panel de administración <span aria-hidden="true">/</span> <span class="text-dark">Conductores y vehículos</span>
             </div>
             <div class="page-heading">
                 <div>
                     <h1>Conductores</h1>
-                    <p>Administra los datos de las personas relacionadas con los vehículos.</p>
+                    <p>Administra conductores y los vehículos asignados a cada uno.</p>
                 </div>
                 <button class="btn btn-primary" id="nuevoConductor" type="button">
                     <i class="bi bi-plus-lg me-1"></i>Nuevo conductor
                 </button>
             </div>
             <div id="alerta" role="alert"></div>
+
+            <!-- ── Tabla de conductores ── -->
             <section class="data-panel" aria-labelledby="conductoresTitle">
                 <div class="panel-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                     <h2 id="conductoresTitle">Conductores registrados</h2>
@@ -82,9 +84,36 @@
                     </table>
                 </div>
             </section>
+
+            <!-- ── Panel de vehículos del conductor seleccionado ── -->
+            <section class="data-panel mt-4" id="panelVehiculos" style="display:none" aria-labelledby="vehiculosTitulo">
+                <div class="panel-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <h2 id="vehiculosTitulo"><i class="bi bi-truck me-1"></i>Vehículos de <span id="nombreConductorVeh" class="text-primary"></span></h2>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-primary" id="btnAsignarVehiculo" type="button">
+                            <i class="bi bi-link-45deg me-1"></i>Asignar vehículo existente
+                        </button>
+                        <button class="btn btn-sm btn-success" id="btnNuevoVehiculoCond" type="button">
+                            <i class="bi bi-plus-lg me-1"></i>Crear y asignar nuevo
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="btnCerrarVehiculos" type="button">
+                            <i class="bi bi-x-lg me-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+                <div id="alertaVehiculos" role="alert"></div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>Color</th><th>Tipo</th><th class="text-end">Acciones</th></tr></thead>
+                        <tbody id="tablaVehiculos"></tbody>
+                    </table>
+                </div>
+            </section>
+
             <footer class="page-footer"><i class="bi bi-shield-check me-1"></i>Sistema de control de infracciones</footer>
         </main>
 
+        <!-- Modal: Crear/Editar conductor -->
         <div class="modal fade" id="conductorModal" tabindex="-1" aria-labelledby="conductorModalTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
                 <div class="modal-header">
@@ -106,7 +135,58 @@
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
-                        <button class="btn btn-primary" id="guardarConductor" type="submit"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+                    </div>
+                </form>
+            </div></div>
+        </div>
+
+        <!-- Modal: Asignar vehículo existente -->
+        <div class="modal fade" id="asignarModal" tabindex="-1" aria-labelledby="asignarModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="asignarModalTitle">Asignar vehículo existente</h2>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary mb-3">Selecciona un vehículo sin dueño para asignarlo a <strong id="asignarNombre"></strong>:</p>
+                    <select class="form-select" id="selectVehiculo">
+                        <option value="">Cargando...</option>
+                    </select>
+                    <div id="asignarError" class="invalid-feedback d-block mt-3" hidden></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" id="confirmarAsignar" type="button"><i class="bi bi-link-45deg me-1"></i>Asignar</button>
+                </div>
+            </div></div>
+        </div>
+
+        <!-- Modal: Crear/Editar vehículo (también para crear y asignar) -->
+        <div class="modal fade" id="vehiculoModal" tabindex="-1" aria-labelledby="vehiculoModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="vehiculoModalTitle">Nuevo vehículo</h2>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="vehiculoForm" novalidate>
+                    <div class="modal-body">
+                        <input type="hidden" id="vehiculoId">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label" for="vPlaca">Placa <span class="text-danger">*</span></label><input class="form-control" id="vPlaca" required maxlength="15"></div>
+                            <div class="col-md-6"><label class="form-label" for="vMarca">Marca <span class="text-danger">*</span></label><input class="form-control" id="vMarca" required maxlength="50"></div>
+                            <div class="col-md-6"><label class="form-label" for="vModelo">Modelo</label><input class="form-control" id="vModelo" maxlength="50"></div>
+                            <div class="col-md-6"><label class="form-label" for="vColor">Color</label><input class="form-control" id="vColor" maxlength="30"></div>
+                            <div class="col-12">
+                                <label class="form-label" for="vTipo">Tipo de vehículo <span class="text-danger">*</span></label>
+                                <select class="form-select" id="vTipo" required><option value="">Cargando tipos...</option></select>
+                            </div>
+                        </div>
+                        <div id="vehiculoFormError" class="invalid-feedback d-block mt-3" hidden></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Guardar</button>
                     </div>
                 </form>
             </div></div>
@@ -122,90 +202,261 @@
                 window.location.replace("portal-usuario.html");
             }
 
-            const tabla = document.getElementById("tablaConductores");
-            const alerta = document.getElementById("alerta");
-            const formulario = document.getElementById("conductorForm");
-            const modal = new bootstrap.Modal(document.getElementById("conductorModal"));
-            const campos = ["nombre", "apellido", "dpi", "licencia", "telefono", "direccion"];
-            let conductores = [];
+            /* ── DOM refs ── */
+            const tabla            = document.getElementById("tablaConductores");
+            const alerta           = document.getElementById("alerta");
+            const formulario       = document.getElementById("conductorForm");
+            const modalConductor   = new bootstrap.Modal(document.getElementById("conductorModal"));
+            const camposCond       = ["nombre", "apellido", "dpi", "licencia", "telefono", "direccion"];
 
-            function escapar(valor) {
-                return String(valor ?? "").replace(/[&<>"']/g, caracter => ({
-                    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
-                }[caracter]));
+            const panelVehiculos   = document.getElementById("panelVehiculos");
+            const tablaVehiculos   = document.getElementById("tablaVehiculos");
+            const alertaVeh        = document.getElementById("alertaVehiculos");
+            const modalAsignar     = new bootstrap.Modal(document.getElementById("asignarModal"));
+            const formularioVeh    = document.getElementById("vehiculoForm");
+            const modalVehiculo    = new bootstrap.Modal(document.getElementById("vehiculoModal"));
+
+            let conductores      = [];
+            let tiposVehiculo    = [];
+            let conductorActivo  = null;
+
+            /* ── Utils ── */
+            function esc(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
+            function msg(texto, tipo = "danger", el = alerta) {
+                el.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show">${esc(texto)}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
             }
-            function mensaje(texto, tipo = "danger") {
-                alerta.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show">${escapar(texto)}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>`;
-            }
-            function limpiarFormulario() {
-                formulario.reset();
+
+            /* ══════════════════════════════════════════
+               CONDUCTORES
+               ══════════════════════════════════════════ */
+            function limpiarFormCond() {
+                formulario.reset(); formulario.classList.remove("was-validated");
                 document.getElementById("conductorId").value = "";
                 document.getElementById("formError").hidden = true;
-                document.getElementById("formError").textContent = "";
                 document.getElementById("conductorModalTitle").textContent = "Nuevo conductor";
             }
-            function abrirEdicion(conductor) {
-                document.getElementById("conductorId").value = conductor.id_conductor;
-                campos.forEach(campo => document.getElementById(campo).value = conductor[campo] || "");
+            function abrirEdicionCond(c) {
+                document.getElementById("conductorId").value = c.id_conductor;
+                camposCond.forEach(f => document.getElementById(f).value = c[f] || "");
                 document.getElementById("formError").hidden = true;
                 document.getElementById("conductorModalTitle").textContent = "Editar conductor";
-                modal.show();
+                modalConductor.show();
             }
-            function renderizar() {
-                const filtro = document.getElementById("buscarConductor").value.trim().toLowerCase();
-                const filtrados = conductores.filter(c => campos.some(campo => String(c[campo] || "").toLowerCase().includes(filtro)));
-                document.getElementById("contador").textContent = filtrados.length;
-                tabla.innerHTML = filtrados.length ? filtrados.map(c => `<tr>
-                    <td class="fw-semibold">${escapar(c.nombre)} ${escapar(c.apellido)}</td>
-                    <td>${escapar(c.dpi)}</td><td>${escapar(c.licencia)}</td><td>${escapar(c.telefono)}</td><td>${escapar(c.direccion)}</td>
-                    <td class="text-end text-nowrap"><button class="btn btn-sm btn-outline-primary editar" data-id="${c.id_conductor}"><i class="bi bi-pencil me-1"></i>Editar</button>
-                    <button class="btn btn-sm btn-outline-danger eliminar" data-id="${c.id_conductor}"><i class="bi bi-trash me-1"></i>Eliminar</button></td>
-                </tr>`).join("") : `<tr><td colspan="6" class="text-center py-4 text-secondary">${conductores.length ? "No hay resultados." : "No hay conductores registrados."}</td></tr>`;
+            function renderConductores() {
+                const q = document.getElementById("buscarConductor").value.trim().toLowerCase();
+                const lista = conductores.filter(c => camposCond.some(f => String(c[f] || "").toLowerCase().includes(q)));
+                document.getElementById("contador").textContent = lista.length;
+                tabla.innerHTML = lista.length ? lista.map(c => `<tr>
+                    <td class="fw-semibold">${esc(c.nombre)} ${esc(c.apellido)}</td>
+                    <td>${esc(c.dpi)}</td><td>${esc(c.licencia)}</td><td>${esc(c.telefono)}</td><td>${esc(c.direccion)}</td>
+                    <td class="text-end text-nowrap">
+                        <button class="btn btn-sm btn-outline-info ver-veh" data-id="${c.id_conductor}"><i class="bi bi-truck me-1"></i>Vehículos</button>
+                        <button class="btn btn-sm btn-outline-primary editar" data-id="${c.id_conductor}"><i class="bi bi-pencil me-1"></i>Editar</button>
+                        <button class="btn btn-sm btn-outline-danger eliminar" data-id="${c.id_conductor}"><i class="bi bi-trash me-1"></i>Eliminar</button>
+                    </td>
+                </tr>`).join("") : `<tr><td colspan="6" class="text-center py-4 text-secondary">${conductores.length ? "Sin resultados." : "No hay conductores."}</td></tr>`;
             }
-            async function cargar() {
-                const respuesta = await fetch("../webresources/admin/conductores");
-                const datos = await respuesta.json().catch(() => ({}));
-                if (!respuesta.ok) throw new Error(datos.mensaje || "No se pudieron cargar los conductores.");
-                conductores = Array.isArray(datos.conductores) ? datos.conductores : [];
-                renderizar();
+            async function cargarConductores() {
+                const r = await fetch("../webresources/admin/conductores");
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(d.mensaje || "No se pudieron cargar los conductores.");
+                conductores = Array.isArray(d.conductores) ? d.conductores : [];
+                renderConductores();
             }
-            document.getElementById("nuevoConductor").addEventListener("click", () => { limpiarFormulario(); modal.show(); });
-            document.getElementById("buscarConductor").addEventListener("input", renderizar);
-            tabla.addEventListener("click", async evento => {
-                const boton = evento.target.closest("button");
-                if (!boton) return;
-                const conductor = conductores.find(c => String(c.id_conductor) === boton.dataset.id);
-                if (boton.classList.contains("editar")) abrirEdicion(conductor);
-                if (boton.classList.contains("eliminar") && conductor && confirm(`¿Eliminar a ${conductor.nombre} ${conductor.apellido}?`)) {
-                    const respuesta = await fetch(`../webresources/admin/conductores/${conductor.id_conductor}`, { method: "DELETE" });
-                    if (!respuesta.ok) {
-                        const datos = await respuesta.json().catch(() => ({}));
-                        mensaje(datos.mensaje || "No se pudo eliminar el conductor. Puede tener infracciones relacionadas.");
-                        return;
+
+            document.getElementById("nuevoConductor").addEventListener("click", () => { limpiarFormCond(); modalConductor.show(); });
+            document.getElementById("buscarConductor").addEventListener("input", renderConductores);
+
+            tabla.addEventListener("click", async ev => {
+                const btn = ev.target.closest("button"); if (!btn) return;
+                const c = conductores.find(x => String(x.id_conductor) === btn.dataset.id);
+                if (!c) return;
+
+                if (btn.classList.contains("editar")) abrirEdicionCond(c);
+
+                if (btn.classList.contains("eliminar") && confirm(`¿Eliminar a ${c.nombre} ${c.apellido}?`)) {
+                    const r = await fetch(`../webresources/admin/conductores/${c.id_conductor}`, { method: "DELETE" });
+                    if (!r.ok) { const d = await r.json().catch(() => ({})); msg(d.mensaje || "No se pudo eliminar."); return; }
+                    msg("Conductor eliminado.", "success");
+                    if (conductorActivo && String(conductorActivo.id_conductor) === String(c.id_conductor)) {
+                        panelVehiculos.style.display = "none"; conductorActivo = null;
                     }
-                    mensaje("Conductor eliminado correctamente.", "success");
-                    await cargar();
+                    await cargarConductores();
+                }
+
+                if (btn.classList.contains("ver-veh")) {
+                    conductorActivo = c;
+                    document.getElementById("nombreConductorVeh").textContent = `${c.nombre} ${c.apellido}`;
+                    panelVehiculos.style.display = "";
+                    panelVehiculos.scrollIntoView({ behavior: "smooth", block: "start" });
+                    await cargarVehiculosCond();
                 }
             });
-            formulario.addEventListener("submit", async evento => {
-                evento.preventDefault();
+
+            formulario.addEventListener("submit", async ev => {
+                ev.preventDefault();
                 if (!formulario.checkValidity()) { formulario.classList.add("was-validated"); return; }
                 const id = document.getElementById("conductorId").value;
-                const datos = Object.fromEntries(campos.map(campo => [campo, document.getElementById(campo).value.trim()]));
-                const respuesta = await fetch("../webresources/admin/conductores" + (id ? `/${id}` : ""), {
+                const datos = Object.fromEntries(camposCond.map(f => [f, document.getElementById(f).value.trim()]));
+                const r = await fetch("../webresources/admin/conductores" + (id ? `/${id}` : ""), {
                     method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos)
                 });
-                const resultado = await respuesta.json().catch(() => ({}));
-                if (!respuesta.ok) {
-                    document.getElementById("formError").textContent = resultado.mensaje || "No se pudo guardar el conductor.";
-                    document.getElementById("formError").hidden = false;
-                    return;
-                }
-                modal.hide();
-                mensaje(id ? "Conductor actualizado correctamente." : "Conductor creado correctamente.", "success");
-                await cargar();
+                const res = await r.json().catch(() => ({}));
+                if (!r.ok) { document.getElementById("formError").textContent = res.mensaje || "Error al guardar."; document.getElementById("formError").hidden = false; return; }
+                modalConductor.hide();
+                msg(id ? "Conductor actualizado." : "Conductor creado.", "success");
+                await cargarConductores();
             });
-            cargar().catch(error => mensaje(error.message));
+
+            /* ══════════════════════════════════════════
+               VEHÍCULOS DEL CONDUCTOR
+               ══════════════════════════════════════════ */
+            async function cargarVehiculosCond() {
+                if (!conductorActivo) return;
+                tablaVehiculos.innerHTML = `<tr><td colspan="6" class="text-center py-4">Cargando...</td></tr>`;
+                try {
+                    const r = await fetch(`../webresources/admin/conductores/${conductorActivo.id_conductor}/vehiculos`);
+                    const d = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(d.mensaje || "Error al cargar.");
+                    const vehs = Array.isArray(d.vehiculos) ? d.vehiculos : [];
+                    tablaVehiculos.innerHTML = vehs.length ? vehs.map(v => `<tr>
+                        <td class="fw-semibold">${esc(v.placa)}</td>
+                        <td>${esc(v.marca)}</td><td>${esc(v.modelo)}</td>
+                        <td>${esc(v.color)}</td><td>${esc(v.tipo)}</td>
+                        <td class="text-end text-nowrap">
+                            <button class="btn btn-sm btn-outline-primary editar-v" data-id="${v.id_vehiculo}"><i class="bi bi-pencil me-1"></i>Editar</button>
+                            <button class="btn btn-sm btn-outline-warning quitar-v" data-id="${v.id_vehiculo}"><i class="bi bi-x-circle me-1"></i>Quitar</button>
+                            <button class="btn btn-sm btn-outline-danger eliminar-v" data-id="${v.id_vehiculo}"><i class="bi bi-trash me-1"></i>Eliminar</button>
+                        </td>
+                    </tr>`).join("")
+                    : `<tr><td colspan="6" class="text-center py-4 text-secondary">Este conductor no tiene vehículos asignados.</td></tr>`;
+                } catch (err) { msg(err.message, "danger", alertaVeh); }
+            }
+
+            tablaVehiculos.addEventListener("click", async ev => {
+                const btn = ev.target.closest("button"); if (!btn || !conductorActivo) return;
+                const idV = Number(btn.dataset.id);
+
+                // Editar vehículo
+                if (btn.classList.contains("editar-v")) {
+                    try {
+                        const r = await fetch("../webresources/admin/vehiculos");
+                        const d = await r.json().catch(() => ({}));
+                        const todos = Array.isArray(d.vehiculos) ? d.vehiculos : [];
+                        const v = todos.find(x => Number(x.id_vehiculo) === idV);
+                        if (v) abrirEdicionVeh(v);
+                    } catch (e) { msg("No se pudo cargar el vehículo.", "danger", alertaVeh); }
+                }
+
+                // Quitar (desasignar sin eliminar)
+                if (btn.classList.contains("quitar-v") && confirm("¿Quitar este vehículo del conductor? (el vehículo no se elimina)")) {
+                    const r = await fetch(`../webresources/admin/conductores/${conductorActivo.id_conductor}/vehiculos/${idV}`, { method: "DELETE" });
+                    if (!r.ok) { const d = await r.json().catch(() => ({})); msg(d.mensaje || "No se pudo quitar.", "danger", alertaVeh); return; }
+                    msg("Vehículo desasignado del conductor.", "success", alertaVeh);
+                    await cargarVehiculosCond();
+                }
+
+                // Eliminar vehículo del sistema
+                if (btn.classList.contains("eliminar-v") && confirm("¿Eliminar este vehículo del sistema por completo?")) {
+                    const r = await fetch(`../webresources/admin/vehiculos/${idV}`, { method: "DELETE" });
+                    if (!r.ok) { const d = await r.json().catch(() => ({})); msg(d.mensaje || "No se pudo eliminar.", "danger", alertaVeh); return; }
+                    msg("Vehículo eliminado del sistema.", "success", alertaVeh);
+                    await cargarVehiculosCond();
+                }
+            });
+
+            document.getElementById("btnCerrarVehiculos").addEventListener("click", () => {
+                panelVehiculos.style.display = "none"; conductorActivo = null;
+            });
+
+            /* ── Asignar vehículo existente (sin dueño) ── */
+            document.getElementById("btnAsignarVehiculo").addEventListener("click", async () => {
+                if (!conductorActivo) return;
+                document.getElementById("asignarNombre").textContent = `${conductorActivo.nombre} ${conductorActivo.apellido}`;
+                document.getElementById("asignarError").hidden = true;
+                const sel = document.getElementById("selectVehiculo");
+                sel.innerHTML = `<option value="">Cargando...</option>`;
+                modalAsignar.show();
+                try {
+                    const r = await fetch("../webresources/admin/vehiculos-disponibles");
+                    const d = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(d.mensaje || "Error.");
+                    const disp = Array.isArray(d.vehiculos) ? d.vehiculos : [];
+                    sel.innerHTML = disp.length
+                        ? `<option value="">— Selecciona —</option>` + disp.map(v =>
+                            `<option value="${v.id_vehiculo}">${esc(v.placa)} — ${esc(v.marca)} ${esc(v.modelo)} (${esc(v.color)}) [${esc(v.tipo)}]</option>`).join("")
+                        : `<option value="">No hay vehículos disponibles sin dueño</option>`;
+                } catch (e) { sel.innerHTML = `<option value="">Error al cargar</option>`; }
+            });
+
+            document.getElementById("confirmarAsignar").addEventListener("click", async () => {
+                const idV = document.getElementById("selectVehiculo").value;
+                if (!idV || !conductorActivo) {
+                    document.getElementById("asignarError").textContent = "Selecciona un vehículo.";
+                    document.getElementById("asignarError").hidden = false; return;
+                }
+                const r = await fetch(`../webresources/admin/conductores/${conductorActivo.id_conductor}/vehiculos/${idV}`, { method: "PUT" });
+                if (!r.ok) { const d = await r.json().catch(() => ({})); document.getElementById("asignarError").textContent = d.mensaje || "Error."; document.getElementById("asignarError").hidden = false; return; }
+                modalAsignar.hide();
+                msg("Vehículo asignado correctamente.", "success", alertaVeh);
+                await cargarVehiculosCond();
+            });
+
+            /* ── Crear nuevo vehículo y asignarlo al conductor ── */
+            async function cargarTipos() {
+                const r = await fetch("../webresources/admin/tipos-vehiculo");
+                const d = await r.json().catch(() => ({}));
+                tiposVehiculo = Array.isArray(d.tipos) ? d.tipos : [];
+            }
+            function poblarTipos(selId) {
+                document.getElementById("vTipo").innerHTML = `<option value="">— Selecciona —</option>` +
+                    tiposVehiculo.map(t => `<option value="${t.id_tipo_vehiculo}" ${Number(t.id_tipo_vehiculo) === Number(selId) ? "selected" : ""}>${esc(t.nombre)}</option>`).join("");
+            }
+            function abrirEdicionVeh(v) {
+                document.getElementById("vehiculoId").value = v.id_vehiculo;
+                document.getElementById("vPlaca").value = v.placa || "";
+                document.getElementById("vMarca").value = v.marca || "";
+                document.getElementById("vModelo").value = v.modelo || "";
+                document.getElementById("vColor").value = v.color || "";
+                poblarTipos(v.id_tipo_vehiculo);
+                document.getElementById("vehiculoFormError").hidden = true;
+                document.getElementById("vehiculoModalTitle").textContent = "Editar vehículo";
+                modalVehiculo.show();
+            }
+
+            document.getElementById("btnNuevoVehiculoCond").addEventListener("click", () => {
+                formularioVeh.reset(); formularioVeh.classList.remove("was-validated");
+                document.getElementById("vehiculoId").value = "";
+                document.getElementById("vehiculoFormError").hidden = true;
+                document.getElementById("vehiculoModalTitle").textContent = "Nuevo vehículo para " + (conductorActivo ? `${conductorActivo.nombre} ${conductorActivo.apellido}` : "conductor");
+                poblarTipos();
+                modalVehiculo.show();
+            });
+
+            formularioVeh.addEventListener("submit", async ev => {
+                ev.preventDefault();
+                if (!formularioVeh.checkValidity()) { formularioVeh.classList.add("was-validated"); return; }
+                const id = document.getElementById("vehiculoId").value;
+                const datos = {
+                    placa: document.getElementById("vPlaca").value.trim(),
+                    marca: document.getElementById("vMarca").value.trim(),
+                    modelo: document.getElementById("vModelo").value.trim(),
+                    color: document.getElementById("vColor").value.trim(),
+                    idTipoVehiculo: Number(document.getElementById("vTipo").value),
+                    idConductor: conductorActivo ? Number(conductorActivo.id_conductor) : 0
+                };
+                const r = await fetch("../webresources/admin/vehiculos" + (id ? `/${id}` : ""), {
+                    method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos)
+                });
+                const res = await r.json().catch(() => ({}));
+                if (!r.ok) { document.getElementById("vehiculoFormError").textContent = res.mensaje || "Error."; document.getElementById("vehiculoFormError").hidden = false; return; }
+                modalVehiculo.hide();
+                msg(id ? "Vehículo actualizado." : "Vehículo creado y asignado.", "success", alertaVeh);
+                await cargarVehiculosCond();
+            });
+
+            /* ── Arranque ── */
+            Promise.all([cargarConductores(), cargarTipos()]).catch(e => msg(e.message));
         </script>
     </body>
 </html>

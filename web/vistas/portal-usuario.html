@@ -28,7 +28,7 @@
             </a>
             <div class="session-actions d-flex align-items-center gap-3">
                 <span class="session-user"><i class="bi bi-person-circle"></i><span data-nombre-usuario></span></span>
-                <button class="btn btn-outline-light btn-sm logout-btn" type="button" data-cerrar-sesion">
+                <button class="btn btn-outline-light btn-sm logout-btn" type="button" id="salirPortal" data-cerrar-sesion onclick="cerrarSesionPortal(event)">
                     <i class="bi bi-box-arrow-right me-1"></i>Salir
                 </button>
             </div>
@@ -128,8 +128,21 @@
         <p id="voucherData"></p>
         <p>Este documento es una referencia para realizar el pago. No confirma el pago.</p>
     </section>
-    <script src="../js/auth.js"></script>
+    <script src="../js/auth.js?v=20261027-2"></script>
     <script>
+        function cerrarSesionPortal(evento) {
+            if (evento) evento.preventDefault();
+            const boton = document.getElementById("salirPortal");
+            if (boton) boton.disabled = true;
+            try { sessionStorage.removeItem("usuarioSesion"); } catch (error) { console.error(error); }
+            window.location.replace("../index.html");
+            fetch("../webresources/auth/google/logout", {
+                method: "GET",
+                cache: "no-store",
+                credentials: "same-origin",
+                keepalive: true
+            }).catch(error => console.error("No se pudo cerrar la sesión del servidor.", error));
+        }
         inicializarSesion();
         const usuarioActual = obtenerUsuarioSesion();
         const rolActual = String(usuarioActual?.rol || "").trim().toUpperCase();

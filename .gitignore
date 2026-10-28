@@ -1,0 +1,9 @@
+# Carpetas de compilación de NetBeans
+build/
+dist/
+
+# Configuraciones personales de tu computadora
+nbproject/private/
+
+# Archivos compilados sueltos
+*.class

@@ -4,7 +4,13 @@ function obtenerUsuarioSesion() {
         window.location.href = "../index.html";
         return null;
     }
-    return JSON.parse(datos);
+    try {
+        return JSON.parse(datos);
+    } catch (error) {
+        sessionStorage.removeItem("usuarioSesion");
+        window.location.replace("../index.html");
+        return null;
+    }
 }
 
 function inicializarSesion() {
@@ -17,19 +23,18 @@ function inicializarSesion() {
         elemento.textContent = usuario.rol || "Usuario";
     });
     document.querySelectorAll("[data-cerrar-sesion]").forEach(elemento => {
-        elemento.addEventListener("click", async () => {
+        elemento.addEventListener("click", () => {
             elemento.disabled = true;
-            try {
-                await fetch("../webresources/auth/google/logout", {
-                    method: "GET",
-                    cache: "no-store",
-                    credentials: "same-origin"
-                });
-            } catch (error) {
-                console.error("No se pudo cerrar la sesión del servidor.", error);
-            }
             sessionStorage.removeItem("usuarioSesion");
             window.location.replace("../index.html");
+            fetch("../webresources/auth/google/logout", {
+                method: "GET",
+                cache: "no-store",
+                credentials: "same-origin",
+                keepalive: true
+            }).catch(error => {
+                console.error("No se pudo cerrar la sesión del servidor.", error);
+            });
         });
     });
 }

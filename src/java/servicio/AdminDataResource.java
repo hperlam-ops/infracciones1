@@ -37,7 +37,7 @@ public class AdminDataResource {
     @GET @Path("vehiculos")
     public Response vehiculos() {
         return consulta("SELECT v.id_vehiculo,v.placa,v.marca,v.modelo,v.color,"
-                + "v.id_tipo_vehiculo,t.nombre AS tipo FROM vehiculo v "
+                + "v.id_tipo_vehiculo,v.id_conductor,t.nombre AS tipo FROM vehiculo v "
                 + "LEFT JOIN tipo_vehiculo t ON t.id_tipo_vehiculo=v.id_tipo_vehiculo "
                 + "ORDER BY v.placa", "vehiculos");
     }
@@ -66,19 +66,164 @@ public class AdminDataResource {
 
     @POST @Path("vehiculos") @Consumes(MediaType.APPLICATION_JSON)
     public Response crearVehiculo(String body) {
-        return ejecutar(body, "INSERT INTO vehiculo (placa,marca,modelo,color,id_tipo_vehiculo) "
-                + "VALUES (?,?,?,?,?)", "vehiculo");
+        if (!admin()) return forbidden();
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body));
+                Connection c = connection()) {
+            JsonObject d = reader.readObject();
+            String sql = "INSERT INTO vehiculo (placa,marca,modelo,color,id_tipo_vehiculo,id_conductor) VALUES (?,?,?,?,?,?)";
+            try (PreparedStatement p = c.prepareStatement(sql)) {
+                p.setString(1, d.getString("placa"));
+                p.setString(2, d.getString("marca"));
+                p.setString(3, d.getString("modelo", ""));
+                p.setString(4, d.getString("color", ""));
+                p.setInt(5, d.getInt("idTipoVehiculo"));
+                if (d.containsKey("idConductor") && !d.isNull("idConductor") && d.getInt("idConductor") > 0) {
+                    p.setInt(6, d.getInt("idConductor"));
+                } else {
+                    p.setNull(6, java.sql.Types.INTEGER);
+                }
+                p.executeUpdate();
+                return Response.ok().build();
+            }
+        } catch (Exception ex) {
+            return error("No se pudo crear el vehículo.");
+        }
     }
 
     @PUT @Path("vehiculos/{id}") @Consumes(MediaType.APPLICATION_JSON)
     public Response editarVehiculo(@PathParam("id") int id, String body) {
-        return ejecutar(body, "UPDATE vehiculo SET placa=?,marca=?,modelo=?,color=?,id_tipo_vehiculo=? "
-                + "WHERE id_vehiculo=?", "vehiculo", id);
+        if (!admin()) return forbidden();
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body));
+                Connection c = connection()) {
+            JsonObject d = reader.readObject();
+            String sql = "UPDATE vehiculo SET placa=?,marca=?,modelo=?,color=?,id_tipo_vehiculo=?,id_conductor=? WHERE id_vehiculo=?";
+            try (PreparedStatement p = c.prepareStatement(sql)) {
+                p.setString(1, d.getString("placa"));
+                p.setString(2, d.getString("marca"));
+                p.setString(3, d.getString("modelo", ""));
+                p.setString(4, d.getString("color", ""));
+                p.setInt(5, d.getInt("idTipoVehiculo"));
+                if (d.containsKey("idConductor") && !d.isNull("idConductor") && d.getInt("idConductor") > 0) {
+                    p.setInt(6, d.getInt("idConductor"));
+                } else {
+                    p.setNull(6, java.sql.Types.INTEGER);
+                }
+                p.setInt(7, id);
+                p.executeUpdate();
+                return Response.ok().build();
+            }
+        } catch (Exception ex) {
+            return error("No se pudo actualizar el vehículo.");
+        }
     }
 
     @DELETE @Path("vehiculos/{id}")
     public Response eliminarVehiculo(@PathParam("id") int id) {
         return eliminar("DELETE FROM vehiculo WHERE id_vehiculo=?", id, "vehiculo");
+    }
+
+    /* ── Vehículos asignados a un conductor (vía columna id_conductor) ── */
+
+    @GET @Path("conductores/{id}/vehiculos")
+    public Response vehiculosDeConductor(@PathParam("id") int idConductor) {
+        if (!admin()) return forbidden();
+        String sql = "SELECT v.id_vehiculo, v.placa, v.marca, v.modelo, v.color, "
+                + "v.id_tipo_vehiculo, t.nombre AS tipo "
+                + "FROM vehiculo v "
+                + "LEFT JOIN tipo_vehiculo t ON t.id_tipo_vehiculo = v.id_tipo_vehiculo "
+                + "WHERE v.id_conductor = ? ORDER BY v.placa";
+        try (Connection c = connection();
+                PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, idConductor);
+            try (ResultSet r = p.executeQuery()) {
+                List<JsonObject> rows = new ArrayList<>();
+                while (r.next()) {
+                    rows.add(Json.createObjectBuilder()
+                            .add("id_vehiculo", r.getInt("id_vehiculo"))
+                            .add("placa", r.getString("placa") != null ? r.getString("placa") : "")
+                            .add("marca", r.getString("marca") != null ? r.getString("marca") : "")
+                            .add("modelo", r.getString("modelo") != null ? r.getString("modelo") : "")
+                            .add("color", r.getString("color") != null ? r.getString("color") : "")
+                            .add("id_tipo_vehiculo", r.getInt("id_tipo_vehiculo"))
+                            .add("tipo", r.getString("tipo") != null ? r.getString("tipo") : "")
+                            .build());
+                }
+                javax.json.JsonArrayBuilder array = Json.createArrayBuilder();
+                rows.forEach(array::add);
+                return Response.ok(Json.createObjectBuilder()
+                        .add("vehiculos", array).build()).build();
+            }
+        } catch (Exception ex) {
+            return error("No se pudieron cargar los vehículos del conductor.");
+        }
+    }
+
+    /** Asignar un vehículo existente a un conductor */
+    @PUT @Path("conductores/{idC}/vehiculos/{idV}")
+    public Response asignarVehiculo(@PathParam("idC") int idConductor,
+                                     @PathParam("idV") int idVehiculo) {
+        if (!admin()) return forbidden();
+        try (Connection c = connection();
+                PreparedStatement p = c.prepareStatement(
+                        "UPDATE vehiculo SET id_conductor=? WHERE id_vehiculo=?")) {
+            p.setInt(1, idConductor);
+            p.setInt(2, idVehiculo);
+            int filas = p.executeUpdate();
+            if (filas == 0) return error("No se encontró el vehículo.");
+            return Response.ok().build();
+        } catch (Exception ex) {
+            return error("No se pudo asignar el vehículo.");
+        }
+    }
+
+    /** Desasignar un vehículo de su conductor (poner id_conductor = NULL) */
+    @DELETE @Path("conductores/{idC}/vehiculos/{idV}")
+    public Response desasignarVehiculo(@PathParam("idC") int idConductor,
+                                       @PathParam("idV") int idVehiculo) {
+        if (!admin()) return forbidden();
+        try (Connection c = connection();
+                PreparedStatement p = c.prepareStatement(
+                        "UPDATE vehiculo SET id_conductor=NULL WHERE id_vehiculo=? AND id_conductor=?")) {
+            p.setInt(1, idVehiculo);
+            p.setInt(2, idConductor);
+            p.executeUpdate();
+            return Response.noContent().build();
+        } catch (Exception ex) {
+            return error("No se pudo desasignar el vehículo.");
+        }
+    }
+
+    /** Vehículos sin conductor asignado (para el selector) */
+    @GET @Path("vehiculos-disponibles")
+    public Response vehiculosDisponibles() {
+        if (!admin()) return forbidden();
+        String sql = "SELECT v.id_vehiculo, v.placa, v.marca, v.modelo, v.color, "
+                + "v.id_tipo_vehiculo, t.nombre AS tipo "
+                + "FROM vehiculo v "
+                + "LEFT JOIN tipo_vehiculo t ON t.id_tipo_vehiculo = v.id_tipo_vehiculo "
+                + "WHERE v.id_conductor IS NULL ORDER BY v.placa";
+        try (Connection c = connection();
+                PreparedStatement p = c.prepareStatement(sql);
+                ResultSet r = p.executeQuery()) {
+            List<JsonObject> rows = new ArrayList<>();
+            while (r.next()) {
+                rows.add(Json.createObjectBuilder()
+                        .add("id_vehiculo", r.getInt("id_vehiculo"))
+                        .add("placa", r.getString("placa") != null ? r.getString("placa") : "")
+                        .add("marca", r.getString("marca") != null ? r.getString("marca") : "")
+                        .add("modelo", r.getString("modelo") != null ? r.getString("modelo") : "")
+                        .add("color", r.getString("color") != null ? r.getString("color") : "")
+                        .add("id_tipo_vehiculo", r.getInt("id_tipo_vehiculo"))
+                        .add("tipo", r.getString("tipo") != null ? r.getString("tipo") : "")
+                        .build());
+            }
+            javax.json.JsonArrayBuilder array = Json.createArrayBuilder();
+            rows.forEach(array::add);
+            return Response.ok(Json.createObjectBuilder()
+                    .add("vehiculos", array).build()).build();
+        } catch (Exception ex) {
+            return error("No se pudieron cargar los vehículos disponibles.");
+        }
     }
 
     @PUT @Path("usuarios/{id}") @Consumes(MediaType.APPLICATION_JSON)
@@ -138,12 +283,8 @@ public class AdminDataResource {
                 p.setString(1,d.getString("nombre")); p.setString(2,d.getString("apellido"));
                 p.setString(3,d.getString("dpi")); p.setString(4,d.getString("licencia"));
                 p.setString(5,d.getString("telefono")); p.setString(6,d.getString("direccion"));
-            } else {
-                p.setString(1,d.getString("placa")); p.setString(2,d.getString("marca"));
-                p.setString(3,d.getString("modelo")); p.setString(4,d.getString("color"));
-                p.setInt(5,d.getInt("idTipoVehiculo"));
             }
-            if (id.length > 0) p.setInt(6,id[0]);
+            if (id.length > 0) p.setInt("conductor".equals(tipo) ? 7 : 6, id[0]);
             p.executeUpdate(); return Response.ok().build();
         } catch (Exception ex) { return error("No se pudo guardar el " + tipo + "."); }
     }
