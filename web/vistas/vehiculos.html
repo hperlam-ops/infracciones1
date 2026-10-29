@@ -1,52 +1,566 @@
 <!doctype html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vehículos | Infracciones</title>
-    <link rel="icon" href="../img/logo.png?v=20261026">
+    <link rel="icon" type="image/png" href="../img/logo.png?v=20261026">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/theme.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="../css/theme.css?v=20261026-4" rel="stylesheet">
+    <style>
+        .vehicle-hero {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(24px, 4vw, 36px);
+            margin-bottom: 24px;
+            border: 1px solid #dbe6f7;
+            border-radius: 22px;
+            background: linear-gradient(115deg, #fff 20%, #e8f0ff 100%);
+        }
+        .vehicle-hero::after {
+            position: absolute;
+            top: -96px;
+            right: 4%;
+            width: 270px;
+            height: 270px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #dce8fa, #ffffff35);
+            content: "";
+            pointer-events: none;
+        }
+        .vehicle-hero-content { position: relative; z-index: 1; }
+        .vehicle-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .vehicle-stat {
+            display: flex;
+            min-height: 108px;
+            align-items: center;
+            gap: 14px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: white;
+        }
+        .vehicle-stat-icon {
+            display: grid;
+            width: 44px;
+            height: 44px;
+            flex: 0 0 auto;
+            place-items: center;
+            border-radius: 13px;
+            background: #edf3ff;
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+        .vehicle-stat-value { display: block; font-size: 1.45rem; font-weight: 750; line-height: 1.15; font-variant-numeric: tabular-nums; }
+        .vehicle-stat-label { color: var(--muted); font-size: .78rem; }
+        .vehicle-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 20px; background: white; }
+        .vehicle-toolbar { min-width: min(100%, 220px); max-width: 290px; }
+        .vehicle-table td, .vehicle-table th { white-space: nowrap; }
+        .vehicle-plate {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border: 1px solid #dce4ef;
+            border-radius: 8px;
+            background: #f7f9fc;
+            color: var(--ink);
+            font-size: .82rem;
+            font-weight: 750;
+            letter-spacing: .3px;
+        }
+        .vehicle-type {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 9px;
+            border: 1px solid #dce7f7;
+            border-radius: 999px;
+            background: #edf3ff;
+            color: #355a91;
+            font-size: .76rem;
+            font-weight: 650;
+        }
+        .vehicle-form-panel[hidden] { display: none !important; }
+        @media (max-width: 767.98px) {
+            .vehicle-stats { grid-template-columns: 1fr; gap: 10px; }
+            .vehicle-stat { min-height: auto; padding: 14px 16px; }
+            .vehicle-hero::after { top: -115px; right: -85px; width: 220px; height: 220px; }
+        }
+    </style>
 </head>
-
 <body>
-    <nav class="navbar navbar-dark">
-        <div class="container"><a class="navbar-brand fw-semibold" href="dashboard.html">Infracciones</a>
-            <div class="session-actions d-flex align-items-center gap-3"><span class="session-user"><span
-                        data-nombre-usuario></span></span><button class="btn btn-outline-light btn-sm"
-                    data-cerrar-sesion>Salir</button></div>
+    <nav class="navbar navbar-expand-lg navbar-dark" aria-label="Principal">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" href="dashboard.html">
+                <span class="brand-mark" aria-hidden="true"><img class="brand-logo" src="../img/logo.png?v=20261026" alt=""></span>
+                Infracciones
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal"
+                    aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir navegación">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav mx-lg-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sanciones.html">Sanciones</a></li>
+                    <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuarios</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false" aria-current="page">Más módulos</a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item active" href="vehiculos.html" aria-current="page">Vehículos</a></li>
+                            <li><a class="dropdown-item" href="infracciones.html">Infracciones</a></li>
+                            <li><a class="dropdown-item" href="conductores.html">Conductores</a></li>
+                            <li><a class="dropdown-item" href="pagos.html">Pagos</a></li>
+                            <li><a class="dropdown-item" href="tipos-vehiculo.html">Tipos de vehículo</a></li>
+                            <li><a class="dropdown-item" href="agentes-transito.html">Agentes de tránsito</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="session-actions d-flex align-items-center gap-3">
+                    <span class="session-user"><i class="bi bi-person-circle" aria-hidden="true"></i><span data-nombre-usuario></span></span>
+                    <button class="btn btn-outline-light btn-sm logout-btn" type="button" data-cerrar-sesion>
+                        <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Salir
+                    </button>
+                </div>
+            </div>
         </div>
     </nav>
+
     <main class="container">
-        <div class="breadcrumb-label">Panel de administración / <span class="text-dark">Vehículos</span></div>
-        <div class="page-heading">
-            <div>
-                <h1>Vehículos</h1>
-                <p>Administra los vehículos asociados al sistema.</p>
-            </div><button class="btn btn-primary" id="nuevo">Nuevo vehículo</button>
+        <div class="breadcrumb-label">
+            <i class="bi bi-car-front" aria-hidden="true"></i>
+            Panel de administración <span aria-hidden="true">/</span><span class="text-dark">Vehículos</span>
         </div>
-        <div id="alerta"></div>
-        <section class="data-panel p-4">
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
-                        <tr>
-                            <th>Placa</th>
-                            <th>Marca</th>
-                            <th>Modelo</th>
-                            <th>Color</th>
-                            <th>Tipo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla"></tbody>
-                </table>
+
+        <section class="vehicle-hero" aria-labelledby="pageTitle">
+            <div class="vehicle-hero-content d-flex flex-wrap justify-content-between align-items-center gap-4">
+                <div>
+                    <p class="eyebrow mb-2"><i class="bi bi-grid-1x2 me-1" aria-hidden="true"></i>Gestión de tránsito</p>
+                    <h1 id="pageTitle">Vehículos</h1>
+                    <p class="page-description">Administra el registro de vehículos, sus categorías y conductores asignados.</p>
+                </div>
+                <button class="btn btn-primary" type="button" id="nuevo">
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Registrar vehículo
+                </button>
             </div>
         </section>
-    </main>
-    <script src="../js/auth.js"></script>
-    <script>inicializarSesion(); const u = obtenerUsuarioSesion(), r = String(u?.rol || "").toUpperCase(); if (!["ADMIN", "ADMINISTRADOR", "ADMINISTRADOR GENERAL"].includes(r)) location.replace("portal-usuario.html"); let datos = [], tipos = [], edit = null, esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); async function cargar() { let a = await fetch("../webresources/admin/vehiculos"), b = await fetch("../webresources/admin/tipos-vehiculo"), j = await a.json(), k = await b.json(); if (!a.ok || !b.ok) throw Error("No se pudieron cargar los vehículos."); datos = j.vehiculos; tipos = k.tipos; tabla.innerHTML = datos.map(v => `<tr><td>${esc(v.placa)}</td><td>${esc(v.marca)}</td><td>${esc(v.modelo)}</td><td>${esc(v.color)}</td><td>${esc(v.tipo)}</td><td><button class="btn btn-sm btn-outline-primary" onclick="editar(${v.id_vehiculo})">Editar</button><button class="btn btn-sm btn-outline-danger ms-1" onclick="borrar(${v.id_vehiculo})">Eliminar</button></td></tr>`).join("") || '<tr><td colspan="6">No hay vehículos.</td></tr>' } function mostrar() { let v = edit || {}; alerta.innerHTML = `<div class="alert alert-light border"><h2 class="h5">${edit ? "Editar" : "Nuevo"} vehículo</h2><input id="placa" class="form-control mb-2" placeholder="Placa" value="${esc(v.placa)}"><input id="marca" class="form-control mb-2" placeholder="Marca" value="${esc(v.marca)}"><input id="modelo" class="form-control mb-2" placeholder="Modelo" value="${esc(v.modelo)}"><input id="color" class="form-control mb-2" placeholder="Color" value="${esc(v.color)}"><select id="tipo" class="form-select mb-2">${tipos.map(t => `<option value="${t.id_tipo_vehiculo}" ${t.id_tipo_vehiculo == v.id_tipo_vehiculo ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</select><button class="btn btn-primary" onclick="guardar()">Guardar</button></div>` } window.editar = id => { edit = datos.find(v => v.id_vehiculo === id); mostrar() }; window.guardar = async () => { let d = { placa: placa.value, marca: marca.value, modelo: modelo.value, color: color.value, idTipoVehiculo: +tipo.value }, x = await fetch("../webresources/admin/vehiculos" + (edit ? "/" + edit.id_vehiculo : ""), { method: edit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }); if (!x.ok) { alerta.innerHTML = '<div class="alert alert-danger">No se pudo guardar.</div>'; return } edit = null; alerta.innerHTML = ""; cargar() }; window.borrar = async id => { if (confirm("¿Eliminar vehículo?")) { await fetch("../webresources/admin/vehiculos/" + id, { method: "DELETE" }); cargar() } }; nuevo.onclick = () => { edit = null; mostrar() }; cargar().catch(e => alerta.innerHTML = `<div class="alert alert-danger">${esc(e.message)}</div>`)</script>
-</body>
 
+        <div id="alerta" role="alert" aria-live="polite"></div>
+
+        <section class="vehicle-stats" aria-label="Resumen de vehículos">
+            <article class="vehicle-stat">
+                <span class="vehicle-stat-icon" aria-hidden="true"><i class="bi bi-car-front-fill"></i></span>
+                <div><span class="vehicle-stat-value" id="totalVehiculos">—</span><span class="vehicle-stat-label">Vehículos registrados</span></div>
+            </article>
+            <article class="vehicle-stat">
+                <span class="vehicle-stat-icon" aria-hidden="true"><i class="bi bi-tags"></i></span>
+                <div><span class="vehicle-stat-value" id="totalTipos">—</span><span class="vehicle-stat-label">Categorías disponibles</span></div>
+            </article>
+            <article class="vehicle-stat">
+                <span class="vehicle-stat-icon" aria-hidden="true"><i class="bi bi-person-check"></i></span>
+                <div><span class="vehicle-stat-value" id="totalAsignados">—</span><span class="vehicle-stat-label">Con conductor asignado</span></div>
+            </article>
+        </section>
+
+        <section class="data-panel p-4 mb-4 vehicle-form-panel" id="formularioPanel" hidden aria-labelledby="formTitle">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <div class="eyebrow mb-2"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Datos del vehículo</div>
+                    <h2 class="h5 mb-1" id="formTitle">Registrar vehículo</h2>
+                    <p class="text-secondary mb-0" id="formDescription">Completa la información para agregarlo al registro.</p>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" type="button" id="cancelar">
+                    <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancelar
+                </button>
+            </div>
+            <form id="vehiculoForm" class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="placa">Placa</label>
+                    <input class="form-control text-uppercase" id="placa" name="placa" required maxlength="20"
+                           autocomplete="off" placeholder="Ej. P123ABC">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="marca">Marca</label>
+                    <input class="form-control" id="marca" name="marca" required maxlength="100"
+                           placeholder="Ej. Toyota">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="modelo">Modelo</label>
+                    <input class="form-control" id="modelo" name="modelo" maxlength="100" placeholder="Ej. Corolla">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="color">Color</label>
+                    <input class="form-control" id="color" name="color" maxlength="60" placeholder="Ej. Gris">
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="tipo">Tipo de vehículo</label>
+                    <select class="form-select" id="tipo" name="tipo" required>
+                        <option value="">Selecciona un tipo</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <label class="form-label" for="conductor">Conductor asignado <span class="text-secondary fw-normal">(opcional)</span></label>
+                    <select class="form-select" id="conductor" name="conductor">
+                        <option value="">Sin asignar</option>
+                    </select>
+                </div>
+                <div class="col-12 d-flex flex-wrap justify-content-end gap-2 pt-2">
+                    <button class="btn btn-neutral" type="button" id="limpiar">Limpiar campos</button>
+                    <button class="btn btn-primary" type="submit" id="guardar">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Guardar vehículo
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="vehicle-panel" aria-labelledby="listTitle">
+            <div class="panel-header d-flex flex-wrap align-items-center justify-content-between gap-3 p-4">
+                <div>
+                    <h2 class="h5 mb-1" id="listTitle">Flota registrada</h2>
+                    <p class="text-secondary mb-0">Consulta y administra los vehículos del sistema.</p>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <div class="vehicle-toolbar">
+                        <label class="visually-hidden" for="buscar">Buscar vehículos</label>
+                        <input class="form-control" id="buscar" type="search" placeholder="Placa, marca, conductor...">
+                    </div>
+                    <label class="visually-hidden" for="filtrarTipo">Filtrar por tipo</label>
+                    <select class="form-select" id="filtrarTipo" style="min-width: 165px; max-width: 210px">
+                        <option value="">Todos los tipos</option>
+                    </select>
+                    <button class="btn btn-outline-primary" type="button" id="recargar"
+                            aria-label="Actualizar vehículos" title="Actualizar listado">
+                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive" role="region" aria-label="Vehículos registrados, desplazable horizontalmente" tabindex="0">
+                <table class="table table-hover align-middle vehicle-table mb-0">
+                    <caption class="visually-hidden">Vehículos registrados con datos y acciones disponibles.</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Vehículo</th>
+                            <th scope="col">Categoría</th>
+                            <th scope="col">Color</th>
+                            <th scope="col">Conductor asignado</th>
+                            <th scope="col" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla">
+                        <tr><td colspan="5" class="text-center text-secondary py-5"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando vehículos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="border-top px-4 py-3 small text-secondary" id="resultados" role="status" aria-live="polite">
+                Cargando listado...
+            </div>
+        </section>
+        <footer class="page-footer"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Sistema de control de infracciones</footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        inicializarSesion();
+        const usuarioSesion = obtenerUsuarioSesion();
+        const rolSesion = String(usuarioSesion?.rol || "").trim().toUpperCase();
+        if (!["ADMIN", "ADMINISTRADOR", "ADMINISTRADOR GENERAL"].includes(rolSesion)) {
+            window.location.replace("portal-usuario.html");
+        }
+
+        const tabla = document.getElementById("tabla");
+        const formularioPanel = document.getElementById("formularioPanel");
+        const formulario = document.getElementById("vehiculoForm");
+        const alerta = document.getElementById("alerta");
+        const resultados = document.getElementById("resultados");
+        const formatoNumero = new Intl.NumberFormat("es-GT");
+        let vehiculos = [];
+        let tipos = [];
+        let conductores = [];
+        let editando = null;
+        let guardando = false;
+
+        function escapar(valor) {
+            return String(valor ?? "").replace(/[&<>"']/g, caracter => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+            }[caracter]));
+        }
+
+        function mostrarAlerta(tipo, mensaje) {
+            alerta.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                ${escapar(mensaje)}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>`;
+        }
+
+        async function solicitar(ruta, opciones = {}) {
+            const respuesta = await fetch(`../webresources/admin/${ruta}`, {
+                credentials: "same-origin",
+                ...opciones,
+                headers: { "Accept": "application/json", ...opciones.headers }
+            });
+            const texto = await respuesta.text();
+            let datos = null;
+            if (texto.trim()) {
+                try {
+                    datos = JSON.parse(texto);
+                } catch (error) {
+                    if (respuesta.ok) throw new Error("El servidor devolvió una respuesta inválida.");
+                }
+            }
+            if (!respuesta.ok) {
+                throw new Error(datos?.mensaje || `El servidor respondió con ${respuesta.status}.`);
+            }
+            return datos;
+        }
+
+        function llenarCatalogos() {
+            const selectorTipo = document.getElementById("tipo");
+            const selectorFiltro = document.getElementById("filtrarTipo");
+            const selectorConductor = document.getElementById("conductor");
+            selectorTipo.innerHTML = '<option value="">Selecciona un tipo</option>' +
+                tipos.map(tipo => `<option value="${escapar(tipo.id_tipo_vehiculo)}">${escapar(tipo.nombre)}</option>`).join("");
+            selectorFiltro.innerHTML = '<option value="">Todos los tipos</option>' +
+                tipos.map(tipo => `<option value="${escapar(tipo.id_tipo_vehiculo)}">${escapar(tipo.nombre)}</option>`).join("");
+            selectorConductor.innerHTML = '<option value="">Sin asignar</option>' +
+                conductores.map(conductor => `<option value="${escapar(conductor.id_conductor)}">
+                    ${escapar(`${conductor.nombre || ""} ${conductor.apellido || ""}`.trim())}
+                </option>`).join("");
+        }
+
+        function renderizar() {
+            const consulta = document.getElementById("buscar").value.trim().toLocaleLowerCase("es");
+            const tipoSeleccionado = document.getElementById("filtrarTipo").value;
+            const filtrados = vehiculos.filter(vehiculo => {
+                const conductor = conductores.find(item =>
+                    String(item.id_conductor) === String(vehiculo.id_conductor));
+                const nombreConductor = conductor
+                    ? `${conductor.nombre || ""} ${conductor.apellido || ""}`.trim()
+                    : "";
+                const coincideTexto = [
+                    vehiculo.placa, vehiculo.marca, vehiculo.modelo, vehiculo.color,
+                    vehiculo.tipo, nombreConductor
+                ].some(valor => String(valor ?? "").toLocaleLowerCase("es").includes(consulta));
+                const coincideTipo = !tipoSeleccionado
+                    || String(vehiculo.id_tipo_vehiculo) === tipoSeleccionado;
+                return coincideTexto && coincideTipo;
+            });
+
+            tabla.innerHTML = filtrados.length
+                ? filtrados.map(vehiculo => {
+                    const conductor = conductores.find(item =>
+                        String(item.id_conductor) === String(vehiculo.id_conductor));
+                    const nombreConductor = conductor
+                        ? `${conductor.nombre || ""} ${conductor.apellido || ""}`.trim()
+                        : "";
+                    const detalle = [vehiculo.marca, vehiculo.modelo].filter(Boolean).join(" ");
+                    return `<tr>
+                        <td>
+                            <span class="vehicle-plate"><i class="bi bi-car-front" aria-hidden="true"></i>${escapar(vehiculo.placa || "Sin placa")}</span>
+                            <div class="small text-secondary mt-1">${escapar(detalle || "Sin detalle de marca o modelo")}</div>
+                        </td>
+                        <td><span class="vehicle-type">${escapar(vehiculo.tipo || "Sin categoría")}</span></td>
+                        <td>${escapar(vehiculo.color || "—")}</td>
+                        <td>${nombreConductor
+                            ? `<span class="fw-semibold">${escapar(nombreConductor)}</span>`
+                            : '<span class="text-secondary"><i class="bi bi-dash-circle me-1" aria-hidden="true"></i>Sin asignar</span>'}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary me-1" type="button"
+                                    data-editar="${escapar(vehiculo.id_vehiculo)}" aria-label="Editar vehículo ${escapar(vehiculo.placa)}"
+                                    title="Editar"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" type="button"
+                                    data-eliminar="${escapar(vehiculo.id_vehiculo)}" aria-label="Eliminar vehículo ${escapar(vehiculo.placa)}"
+                                    title="Eliminar"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        </td>
+                    </tr>`;
+                }).join("")
+                : `<tr><td colspan="5" class="text-center text-secondary py-5">
+                    ${vehiculos.length ? "No se encontraron vehículos con esos filtros." : "Todavía no hay vehículos registrados."}
+                </td></tr>`;
+
+            document.getElementById("totalVehiculos").textContent = formatoNumero.format(vehiculos.length);
+            document.getElementById("totalTipos").textContent = formatoNumero.format(tipos.length);
+            document.getElementById("totalAsignados").textContent = formatoNumero.format(
+                vehiculos.filter(vehiculo => vehiculo.id_conductor !== "" && vehiculo.id_conductor != null).length
+            );
+            resultados.textContent = `Mostrando ${formatoNumero.format(filtrados.length)} de ${formatoNumero.format(vehiculos.length)} vehículos.`;
+        }
+
+        function mostrarFormulario(vehiculo = null) {
+            editando = vehiculo;
+            formulario.reset();
+            document.getElementById("placa").value = vehiculo?.placa || "";
+            document.getElementById("marca").value = vehiculo?.marca || "";
+            document.getElementById("modelo").value = vehiculo?.modelo || "";
+            document.getElementById("color").value = vehiculo?.color || "";
+            document.getElementById("tipo").value = vehiculo
+                ? String(vehiculo.id_tipo_vehiculo)
+                : "";
+            document.getElementById("conductor").value = vehiculo?.id_conductor
+                ? String(vehiculo.id_conductor)
+                : "";
+            document.getElementById("formTitle").textContent = vehiculo
+                ? `Editar vehículo ${vehiculo.placa || ""}`
+                : "Registrar vehículo";
+            document.getElementById("formDescription").textContent = vehiculo
+                ? "Actualiza la información y asignaciones de este vehículo."
+                : "Completa la información para agregarlo al registro.";
+            document.getElementById("guardar").innerHTML = vehiculo
+                ? '<i class="bi bi-check2 me-1" aria-hidden="true"></i>Guardar cambios'
+                : '<i class="bi bi-check2 me-1" aria-hidden="true"></i>Guardar vehículo';
+            formularioPanel.hidden = false;
+            document.getElementById("placa").focus();
+            formularioPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function ocultarFormulario() {
+            formularioPanel.hidden = true;
+            formulario.reset();
+            editando = null;
+        }
+
+        async function cargar() {
+            const botonRecargar = document.getElementById("recargar");
+            botonRecargar.disabled = true;
+            resultados.textContent = "Actualizando registros...";
+            try {
+                const [datosVehiculos, datosTipos, datosConductores] = await Promise.all([
+                    solicitar("vehiculos"),
+                    solicitar("tipos-vehiculo"),
+                    solicitar("conductores")
+                ]);
+                if (!Array.isArray(datosVehiculos?.vehiculos)
+                    || !Array.isArray(datosTipos?.tipos)
+                    || !Array.isArray(datosConductores?.conductores)) {
+                    throw new Error("El servidor devolvió información incompleta para el módulo.");
+                }
+                vehiculos = datosVehiculos.vehiculos;
+                tipos = datosTipos.tipos;
+                conductores = datosConductores.conductores;
+                llenarCatalogos();
+                renderizar();
+                if (!tipos.length) {
+                    mostrarAlerta("warning", "No hay tipos de vehículo disponibles. Registra una categoría antes de crear vehículos.");
+                }
+            } catch (error) {
+                console.error("No se pudieron cargar los datos de vehículos.", error);
+                vehiculos = [];
+                tipos = [];
+                conductores = [];
+                llenarCatalogos();
+                renderizar();
+                document.getElementById("totalVehiculos").textContent = "—";
+                document.getElementById("totalTipos").textContent = "—";
+                document.getElementById("totalAsignados").textContent = "—";
+                tabla.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-5">No se pudieron cargar los vehículos. Intenta actualizar nuevamente.</td></tr>';
+                resultados.textContent = "No se pudo cargar el listado.";
+                mostrarAlerta("danger", error.message);
+            } finally {
+                botonRecargar.disabled = false;
+            }
+        }
+
+        document.getElementById("nuevo").addEventListener("click", () => {
+            if (!tipos.length) {
+                mostrarAlerta("warning", "Registra primero un tipo de vehículo para continuar.");
+                return;
+            }
+            mostrarFormulario();
+        });
+        document.getElementById("cancelar").addEventListener("click", ocultarFormulario);
+        document.getElementById("limpiar").addEventListener("click", () => {
+            const placa = document.getElementById("placa").value;
+            formulario.reset();
+            if (editando) {
+                document.getElementById("placa").value = placa;
+                document.getElementById("tipo").value = String(editando.id_tipo_vehiculo);
+                document.getElementById("conductor").value = editando.id_conductor
+                    ? String(editando.id_conductor)
+                    : "";
+            }
+            document.getElementById("placa").focus();
+        });
+        document.getElementById("recargar").addEventListener("click", cargar);
+        document.getElementById("buscar").addEventListener("input", renderizar);
+        document.getElementById("filtrarTipo").addEventListener("change", renderizar);
+
+        tabla.addEventListener("click", async evento => {
+            const botonEditar = evento.target.closest("[data-editar]");
+            const botonEliminar = evento.target.closest("[data-eliminar]");
+            if (botonEditar) {
+                const vehiculo = vehiculos.find(item =>
+                    String(item.id_vehiculo) === botonEditar.dataset.editar);
+                if (vehiculo) mostrarFormulario(vehiculo);
+                return;
+            }
+            if (!botonEliminar) return;
+            const vehiculo = vehiculos.find(item =>
+                String(item.id_vehiculo) === botonEliminar.dataset.eliminar);
+            if (!vehiculo || !window.confirm(`¿Eliminar el vehículo con placa "${vehiculo.placa}"? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+            botonEliminar.disabled = true;
+            try {
+                await solicitar(`vehiculos/${encodeURIComponent(vehiculo.id_vehiculo)}`, {
+                    method: "DELETE"
+                });
+                mostrarAlerta("success", "El vehículo se eliminó correctamente.");
+                await cargar();
+            } catch (error) {
+                console.error("No se pudo eliminar el vehículo.", error);
+                mostrarAlerta("danger", error.message);
+            } finally {
+                botonEliminar.disabled = false;
+            }
+        });
+
+        formulario.addEventListener("submit", async evento => {
+            evento.preventDefault();
+            if (guardando) return;
+            if (!formulario.reportValidity()) return;
+            const datos = {
+                placa: document.getElementById("placa").value.trim().toUpperCase(),
+                marca: document.getElementById("marca").value.trim(),
+                modelo: document.getElementById("modelo").value.trim(),
+                color: document.getElementById("color").value.trim(),
+                idTipoVehiculo: Number(document.getElementById("tipo").value),
+                idConductor: document.getElementById("conductor").value
+                    ? Number(document.getElementById("conductor").value)
+                    : null
+            };
+            if (!datos.placa || !datos.marca || !datos.idTipoVehiculo) {
+                mostrarAlerta("warning", "Completa la placa, la marca y el tipo de vehículo.");
+                return;
+            }
+
+            guardando = true;
+            document.getElementById("guardar").disabled = true;
+            try {
+                const id = editando?.id_vehiculo;
+                await solicitar(id
+                    ? `vehiculos/${encodeURIComponent(id)}`
+                    : "vehiculos", {
+                    method: id ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                });
+                ocultarFormulario();
+                mostrarAlerta("success", id
+                    ? "El vehículo se actualizó correctamente."
+                    : "El vehículo se registró correctamente.");
+                await cargar();
+            } catch (error) {
+                console.error("No se pudo guardar el vehículo.", error);
+                mostrarAlerta("danger", error.message);
+            } finally {
+                guardando = false;
+                document.getElementById("guardar").disabled = false;
+            }
+        });
+
+        cargar();
+    </script>
+</body>
 </html>

@@ -36,6 +36,9 @@ La interfaz está diseñada con Bootstrap 5 y JavaScript, mientras que el backen
 - Creación y asignación de vehículos a conductores.
 - Registro de infracciones buscando el vehículo por placa.
 - Asociación automática del conductor asignado al vehículo.
+- Consulta administrativa del historial de pagos confirmados y del total recaudado.
+- CRUD del catálogo de tipos de vehículo.
+- CRUD de agentes de tránsito que registran infracciones.
 
 ### Portal de usuario y pagos beta
 
@@ -100,9 +103,9 @@ El proyecto está organizado en capas para separar las responsabilidades de la a
 - Comunicación con servicios backend
 - Conexión con base de datos
 
-Las vistas `agentes-transito.html`, `pagos.html` y `tipos-vehiculo.html`
-están reservadas para módulos pendientes y todavía no contienen una interfaz
-funcional.
+La vista de pagos permite consultar y buscar los pagos confirmados; la
+generación de vouchers y la confirmación simulada se realizan desde el portal
+de usuario.
 
 ## Requisitos
 
@@ -161,7 +164,6 @@ sanciones, infracciones y portal de consulta están implementados.
 ## Mejoras futuras
 
 - Incorporar una base de datos de ejemplo o scripts SQL de instalación.
-- Completar los módulos de agentes de tránsito, pagos y tipos de vehículo.
 - Separar completamente las credenciales de base de datos de la configuración del código.
 - Agregar validaciones centralizadas en el backend.
 - Implementar paginación para listados grandes.
