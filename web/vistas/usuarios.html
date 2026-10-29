@@ -65,6 +65,9 @@
                     <h1>Usuarios</h1>
                     <p>Consulta las cuentas registradas y sus permisos dentro del sistema.</p>
                 </div>
+                <button class="btn btn-primary" type="button" id="nuevoUsuario">
+                    <i class="bi bi-person-plus me-1"></i> Añadir usuario
+                </button>
             </div>
             <div id="alerta" role="alert"></div>
             <section class="data-panel" aria-labelledby="usuarios-title">
@@ -89,7 +92,7 @@
         </main>
         <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-                <div class="modal-header"><h2 class="modal-title fs-5">Editar usuario</h2><button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-header"><h2 class="modal-title fs-5" id="usuarioModalTitle">Editar usuario</h2><button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
                 <form id="editarUsuarioForm"><div class="modal-body">
                     <input type="hidden" id="usuarioId">
                     <label class="form-label" for="usuarioCuenta">Cuenta</label><input class="form-control mb-3" id="usuarioCuenta" required>
@@ -111,7 +114,9 @@
                 window.location.replace("portal-usuario.html");
             }
             const modalUsuario = new bootstrap.Modal(document.getElementById("editarUsuarioModal"));
+            const usuarioModalTitle = document.getElementById("usuarioModalTitle");
             const usuariosCache = new Map();
+            let creandoUsuario = false;
             solicitarAPI("lista").then(usuarios => {
                 usuarios.forEach(usuario => usuariosCache.set(String(usuario.idUsuario), usuario));
                 document.getElementById("usuariosBody").innerHTML = usuarios.length
@@ -138,6 +143,18 @@
                 document.getElementById("usuarioNombre").value = usuario.nombreCompleto || "";
                 document.getElementById("usuarioRol").value = usuario.rol || "Usuario";
                 document.getElementById("usuarioPassword").value = "";
+                creandoUsuario = false;
+                usuarioModalTitle.textContent = "Editar usuario";
+                modalUsuario.show();
+            });
+            document.getElementById("nuevoUsuario").addEventListener("click", () => {
+                creandoUsuario = true;
+                document.getElementById("usuarioId").value = "";
+                document.getElementById("usuarioCuenta").value = "";
+                document.getElementById("usuarioNombre").value = "";
+                document.getElementById("usuarioRol").value = "Usuario";
+                document.getElementById("usuarioPassword").value = "";
+                usuarioModalTitle.textContent = "Añadir usuario";
                 modalUsuario.show();
             });
             document.getElementById("editarUsuarioForm").addEventListener("submit", async event => {
@@ -150,26 +167,27 @@
                         '<div class="alert alert-warning">La cuenta y el nombre completo son obligatorios.</div>';
                     return;
                 }
-                if (password && password.length < 8) {
+                if ((creandoUsuario && !password) || (password && password.length < 8)) {
                     document.getElementById("alerta").innerHTML =
-                        '<div class="alert alert-warning">La contraseña debe tener al menos 8 caracteres.</div>';
+                        '<div class="alert alert-warning">La contraseña es obligatoria y debe tener al menos 8 caracteres.</div>';
                     return;
                 }
                 try {
-                    await fetch(`../webresources/admin/usuarios/${document.getElementById("usuarioId").value}`, {
-                        method: "PUT", headers: {"Content-Type":"application/json"},
+                    const id = document.getElementById("usuarioId").value;
+                    const respuesta = await fetch(`../webresources/admin/usuarios${creandoUsuario ? "" : "/" + id}`, {
+                        method: creandoUsuario ? "POST" : "PUT",
+                        headers: {"Content-Type":"application/json"},
                         body: JSON.stringify({
                             nombreUsuario: cuenta,
                             nombreCompleto: nombre,
                             rol: document.getElementById("usuarioRol").value,
                             contrasena: password
                         })
-                    }).then(async respuesta => {
-                        if (!respuesta.ok) {
-                            const datos = await respuesta.json().catch(() => ({}));
-                            throw new Error(datos.mensaje || "No se pudo actualizar.");
-                        }
                     });
+                    if (!respuesta.ok) {
+                        const datos = await respuesta.json().catch(() => ({}));
+                        throw new Error(datos.mensaje || "No se pudo guardar el usuario.");
+                    }
                     modalUsuario.hide(); location.reload();
                 } catch (error) { document.getElementById("alerta").innerHTML = `<div class="alert alert-danger">${escaparHTML(error.message)}</div>`; }
             });
