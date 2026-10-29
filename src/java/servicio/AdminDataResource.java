@@ -300,6 +300,54 @@ public class AdminDataResource {
                 : (LoginResponse) session.getAttribute("googleAuthenticatedUser");
     }
 
+    @POST @Path("usuarios") @Consumes(MediaType.APPLICATION_JSON)
+    public Response crearUsuario(String body) {
+        if (!admin()) return forbidden();
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body));
+                Connection c = connection()) {
+            JsonObject data = reader.readObject();
+            String nombreUsuario = data.getString("nombreUsuario", "").trim();
+            String nombreCompleto = data.getString("nombreCompleto", "").trim();
+            String rol = data.getString("rol", "").trim().toUpperCase();
+            String password = data.getString("contrasena", "");
+            if (nombreUsuario.isEmpty() || nombreCompleto.isEmpty() || password.isEmpty()) {
+                return badRequest("La cuenta, el nombre completo y la contraseña son obligatorios.");
+            }
+            if (!"USUARIO".equals(rol) && !"ADMIN".equals(rol)) {
+                return badRequest("El rol seleccionado no es válido.");
+            }
+            if (password.length() < 8) {
+                return badRequest("La contraseña debe tener al menos 8 caracteres.");
+            }
+            try (PreparedStatement duplicate = c.prepareStatement(
+                    "SELECT id_usuario FROM usuario WHERE LOWER(nombre_usuario)=LOWER(?) LIMIT 1")) {
+                duplicate.setString(1, nombreUsuario);
+                try (ResultSet result = duplicate.executeQuery()) {
+                    if (result.next()) {
+                        return badRequest("Ya existe una cuenta con ese nombre de usuario.");
+                    }
+                }
+            }
+            try (PreparedStatement statement = c.prepareStatement(
+                    "INSERT INTO usuario (nombre_usuario,contrasena,nombre_completo,rol) "
+                    + "VALUES (?,?,?,?)", java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                statement.setString(1, nombreUsuario);
+                statement.setString(2, password);
+                statement.setString(3, nombreCompleto);
+                statement.setString(4, rol);
+                statement.executeUpdate();
+                try (ResultSet keys = statement.getGeneratedKeys()) {
+                    int id = keys.next() ? keys.getInt(1) : 0;
+                    return Response.status(Response.Status.CREATED).entity(
+                            Json.createObjectBuilder().add("idUsuario", id)
+                                    .add("mensaje", "Usuario creado correctamente.").build()).build();
+                }
+            }
+        } catch (Exception ex) {
+            return error("No se pudo crear el usuario.");
+        }
+    }
+
     private Response consulta(String sql, String key) {
         if (!admin()) return forbidden();
         try (Connection c = connection(); PreparedStatement p = c.prepareStatement(sql);
