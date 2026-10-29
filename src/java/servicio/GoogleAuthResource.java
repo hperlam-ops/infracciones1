@@ -198,7 +198,7 @@ public class GoogleAuthResource {
         email = email.trim().toLowerCase();
 
         String sql = "SELECT id_usuario, nombre_usuario, nombre_completo, rol "
-                + "FROM usuario WHERE nombre_usuario = ? LIMIT 1";
+                + "FROM usuario WHERE LOWER(TRIM(nombre_usuario)) = ? LIMIT 1";
         Conexion conexion = new Conexion();
         Connection connection = conexion.getConnection();
         if (connection == null) {

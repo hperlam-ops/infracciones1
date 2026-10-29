@@ -299,13 +299,13 @@
             alerta.textContent = mensaje;
             contenedor.replaceChildren(alerta);
         }
-        function redirigirSegunRol(usuario) {
+        window.redirigirSegunRol = function redirigirSegunRol(usuario) {
             const rol = String(usuario?.rol || "").trim().toUpperCase();
             const esAdmin = ["ADMIN", "ADMINISTRADOR", "ADMINISTRADOR GENERAL"].includes(rol);
             window.location.href = esAdmin
                 ? "vistas/dashboard.html"
                 : "vistas/portal-usuario.html";
-        }
+        };
         async function procesarRespuestaGoogle() {
             const parametros = new URLSearchParams(window.location.search);
             const resultado = parametros.get("google");
