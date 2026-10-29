@@ -95,7 +95,7 @@
                     <label class="form-label" for="usuarioCuenta">Cuenta</label><input class="form-control mb-3" id="usuarioCuenta" required>
                     <label class="form-label" for="usuarioNombre">Nombre completo</label><input class="form-control mb-3" id="usuarioNombre" required>
                     <label class="form-label" for="usuarioRol">Rol</label><select class="form-select mb-3" id="usuarioRol"><option>Usuario</option><option>ADMIN</option></select>
-                    <label class="form-label" for="usuarioPassword">Nueva contraseña <small>(opcional)</small></label><input class="form-control" type="password" id="usuarioPassword">
+                    <label class="form-label" for="usuarioPassword">Nueva contraseña <small>(opcional, mínimo 8 caracteres)</small></label><input class="form-control" type="password" id="usuarioPassword" minlength="8" autocomplete="new-password">
                 </div><div class="modal-footer"><button class="btn btn-primary" type="submit">Guardar cambios</button></div></form>
             </div></div>
         </div>
@@ -142,16 +142,34 @@
             });
             document.getElementById("editarUsuarioForm").addEventListener("submit", async event => {
                 event.preventDefault();
+                const cuenta = document.getElementById("usuarioCuenta").value.trim();
+                const nombre = document.getElementById("usuarioNombre").value.trim();
+                const password = document.getElementById("usuarioPassword").value;
+                if (!cuenta || !nombre) {
+                    document.getElementById("alerta").innerHTML =
+                        '<div class="alert alert-warning">La cuenta y el nombre completo son obligatorios.</div>';
+                    return;
+                }
+                if (password && password.length < 8) {
+                    document.getElementById("alerta").innerHTML =
+                        '<div class="alert alert-warning">La contraseña debe tener al menos 8 caracteres.</div>';
+                    return;
+                }
                 try {
                     await fetch(`../webresources/admin/usuarios/${document.getElementById("usuarioId").value}`, {
                         method: "PUT", headers: {"Content-Type":"application/json"},
                         body: JSON.stringify({
-                            nombreUsuario: document.getElementById("usuarioCuenta").value.trim(),
-                            nombreCompleto: document.getElementById("usuarioNombre").value.trim(),
+                            nombreUsuario: cuenta,
+                            nombreCompleto: nombre,
                             rol: document.getElementById("usuarioRol").value,
-                            contrasena: document.getElementById("usuarioPassword").value
+                            contrasena: password
                         })
-                    }).then(async respuesta => { if (!respuesta.ok) throw new Error((await respuesta.json()).mensaje || "No se pudo actualizar."); });
+                    }).then(async respuesta => {
+                        if (!respuesta.ok) {
+                            const datos = await respuesta.json().catch(() => ({}));
+                            throw new Error(datos.mensaje || "No se pudo actualizar.");
+                        }
+                    });
                     modalUsuario.hide(); location.reload();
                 } catch (error) { document.getElementById("alerta").innerHTML = `<div class="alert alert-danger">${escaparHTML(error.message)}</div>`; }
             });

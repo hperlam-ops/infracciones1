@@ -114,10 +114,11 @@ public class InfraccionesResource {
                         Json.createObjectBuilder().add("mensaje", "Ingresa una placa.").build()).build();
             }
             String sql = "SELECT v.id_vehiculo, v.placa, v.marca, v.modelo, "
-                    + "i.id_conductor, CONCAT(c.nombre, ' ', c.apellido) AS conductor "
+                    + "COALESCE(v.id_conductor, i.id_conductor) AS id_conductor, "
+                    + "CONCAT(c.nombre, ' ', c.apellido) AS conductor "
                     + "FROM vehiculo v "
                     + "LEFT JOIN infraccion i ON i.id_vehiculo=v.id_vehiculo "
-                    + "LEFT JOIN conductor c ON c.id_conductor=i.id_conductor "
+                    + "LEFT JOIN conductor c ON c.id_conductor=COALESCE(v.id_conductor, i.id_conductor) "
                     + "WHERE LOWER(TRIM(v.placa))=LOWER(TRIM(?)) "
                     + "ORDER BY i.fecha DESC LIMIT 1";
             try (Connection connection = conexion();

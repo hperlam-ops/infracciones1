@@ -33,7 +33,6 @@ public class ApplicationConfig extends Application {
         resources.add(servicio.InfraccionesResource.class);
         resources.add(servicio.Operaciones.class);
         resources.add(servicio.PortalUsuarioResource.class);
-        resources.add(servicio.RecuperacionResource.class);
     }
     
 }

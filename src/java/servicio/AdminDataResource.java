@@ -232,23 +232,72 @@ public class AdminDataResource {
         try (JsonReader reader = Json.createReader(new java.io.StringReader(body));
                 Connection c = connection()) {
             JsonObject data = reader.readObject();
+            String nombreUsuario = data.getString("nombreUsuario", "").trim();
+            String nombreCompleto = data.getString("nombreCompleto", "").trim();
+            String rol = data.getString("rol", "").trim().toUpperCase();
             String password = data.getString("contrasena", "");
+            if (nombreUsuario.isEmpty() || nombreCompleto.isEmpty()) {
+                return badRequest("La cuenta y el nombre completo son obligatorios.");
+            }
+            if (!"USUARIO".equals(rol) && !"ADMIN".equals(rol)) {
+                return badRequest("El rol seleccionado no es válido.");
+            }
+            if (!password.isEmpty() && password.length() < 8) {
+                return badRequest("La contraseña debe tener al menos 8 caracteres.");
+            }
+            try (PreparedStatement duplicate = c.prepareStatement(
+                    "SELECT id_usuario FROM usuario WHERE LOWER(nombre_usuario)=LOWER(?) "
+                    + "AND id_usuario<>? LIMIT 1")) {
+                duplicate.setString(1, nombreUsuario);
+                duplicate.setInt(2, id);
+                try (ResultSet result = duplicate.executeQuery()) {
+                    if (result.next()) {
+                        return badRequest("Ya existe otra cuenta con ese nombre de usuario.");
+                    }
+                }
+            }
+            LoginResponse actual = usuarioActual();
+            if (actual != null && actual.getIdUsuario() == id
+                    && "USUARIO".equals(rol) && !hayOtroAdministrador(c, id)) {
+                return badRequest("No puedes quitar el último administrador del sistema.");
+            }
             String sql = password.isEmpty()
                     ? "UPDATE usuario SET nombre_usuario=?,nombre_completo=?,rol=? WHERE id_usuario=?"
                     : "UPDATE usuario SET nombre_usuario=?,contrasena=?,nombre_completo=?,rol=? WHERE id_usuario=?";
             try (PreparedStatement p = c.prepareStatement(sql)) {
-                p.setString(1, data.getString("nombreUsuario"));
+                p.setString(1, nombreUsuario);
                 int offset = 2;
                 if (!password.isEmpty()) p.setString(offset++, password);
-                p.setString(offset++, data.getString("nombreCompleto"));
-                p.setString(offset++, data.getString("rol"));
+                p.setString(offset++, nombreCompleto);
+                p.setString(offset++, rol);
                 p.setInt(offset, id);
-                p.executeUpdate();
+                if (p.executeUpdate() != 1) {
+                    return Response.status(Response.Status.NOT_FOUND).entity(
+                            Json.createObjectBuilder().add("mensaje",
+                                    "No se encontró el usuario.").build()).build();
+                }
                 return Response.ok().build();
             }
         } catch (Exception ex) {
             return error("No se pudo actualizar el usuario.");
         }
+    }
+
+    private boolean hayOtroAdministrador(Connection connection, int id) throws Exception {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM usuario WHERE id_usuario<>? "
+                + "AND UPPER(TRIM(rol)) IN ('ADMIN','ADMINISTRADOR','ADMINISTRADOR GENERAL')")) {
+            statement.setInt(1, id);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() && result.getInt(1) > 0;
+            }
+        }
+    }
+
+    private LoginResponse usuarioActual() {
+        HttpSession session = request.getSession(false);
+        return session == null ? null
+                : (LoginResponse) session.getAttribute("googleAuthenticatedUser");
     }
 
     private Response consulta(String sql, String key) {
@@ -308,5 +357,9 @@ public class AdminDataResource {
         return "ADMIN".equals(r)||"ADMINISTRADOR".equals(r)||"ADMINISTRADOR GENERAL".equals(r);
     }
     private Response forbidden(){return Response.status(Response.Status.FORBIDDEN).build();}
+    private Response badRequest(String message) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(
+                Json.createObjectBuilder().add("mensaje", message).build()).build();
+    }
     private Response error(String message){return Response.serverError().entity(Json.createObjectBuilder().add("mensaje",message).build()).build();}
 }

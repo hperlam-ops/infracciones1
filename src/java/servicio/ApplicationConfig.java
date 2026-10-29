@@ -31,7 +31,6 @@ public class ApplicationConfig extends Application {
         resources.add(servicio.PortalUsuarioResource.class);
         resources.add(servicio.InfraccionesResource.class);
         resources.add(servicio.AdminDataResource.class);
-        resources.add(servicio.RecuperacionResource.class);
     }
     
 }
