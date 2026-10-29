@@ -34,6 +34,41 @@ public class AdminDataResource {
                 + "FROM conductor ORDER BY apellido,nombre", "conductores");
     }
 
+    @GET @Path("agentes-transito")
+    public Response agentesTransito() {
+        return consulta("SELECT id_agente,nombre,apellido FROM agente_transito "
+                + "ORDER BY apellido,nombre", "agentes");
+    }
+
+    @POST @Path("agentes-transito") @Consumes(MediaType.APPLICATION_JSON)
+    public Response crearAgenteTransito(String body) {
+        return guardarAgenteTransito(body, 0);
+    }
+
+    @PUT @Path("agentes-transito/{id}") @Consumes(MediaType.APPLICATION_JSON)
+    public Response editarAgenteTransito(@PathParam("id") int id, String body) {
+        if (id <= 0) return badRequest("El agente indicado no es válido.");
+        return guardarAgenteTransito(body, id);
+    }
+
+    @DELETE @Path("agentes-transito/{id}")
+    public Response eliminarAgenteTransito(@PathParam("id") int id) {
+        if (!admin()) return forbidden();
+        try (Connection c = connection();
+                PreparedStatement p = c.prepareStatement(
+                        "DELETE FROM agente_transito WHERE id_agente=?")) {
+            p.setInt(1, id);
+            if (p.executeUpdate() == 0) {
+                return Response.status(Response.Status.NOT_FOUND).entity(
+                        Json.createObjectBuilder().add("mensaje",
+                                "No se encontró el agente de tránsito.").build()).build();
+            }
+            return Response.noContent().build();
+        } catch (Exception ex) {
+            return error("No se pudo eliminar el agente. Puede tener infracciones registradas.");
+        }
+    }
+
     @GET @Path("vehiculos")
     public Response vehiculos() {
         return consulta("SELECT v.id_vehiculo,v.placa,v.marca,v.modelo,v.color,"
@@ -45,6 +80,100 @@ public class AdminDataResource {
     @GET @Path("tipos-vehiculo")
     public Response tiposVehiculo() {
         return consulta("SELECT id_tipo_vehiculo,nombre FROM tipo_vehiculo ORDER BY nombre", "tipos");
+    }
+
+    @POST @Path("tipos-vehiculo") @Consumes(MediaType.APPLICATION_JSON)
+    public Response crearTipoVehiculo(String body) {
+        if (!admin()) return forbidden();
+        String nombre;
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body))) {
+            nombre = reader.readObject().getString("nombre", "").trim();
+        } catch (Exception ex) {
+            return badRequest("Ingresa un nombre válido para el tipo de vehículo.");
+        }
+        if (nombre.isEmpty()) {
+            return badRequest("El nombre del tipo de vehículo es obligatorio.");
+        }
+        try (Connection c = connection()) {
+            if (existeTipoVehiculo(c, nombre, 0)) {
+                return badRequest("Ya existe un tipo de vehículo con ese nombre.");
+            }
+            try (PreparedStatement p = c.prepareStatement(
+                    "INSERT INTO tipo_vehiculo (nombre) VALUES (?)")) {
+                p.setString(1, nombre);
+                p.executeUpdate();
+            }
+            return Response.ok().build();
+        } catch (Exception ex) {
+            return error("No se pudo crear el tipo de vehículo.");
+        }
+    }
+
+    @PUT @Path("tipos-vehiculo/{id}") @Consumes(MediaType.APPLICATION_JSON)
+    public Response editarTipoVehiculo(@PathParam("id") int id, String body) {
+        if (!admin()) return forbidden();
+        String nombre;
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body))) {
+            nombre = reader.readObject().getString("nombre", "").trim();
+        } catch (Exception ex) {
+            return badRequest("Ingresa un nombre válido para el tipo de vehículo.");
+        }
+        if (nombre.isEmpty()) {
+            return badRequest("El nombre del tipo de vehículo es obligatorio.");
+        }
+        try (Connection c = connection()) {
+            if (existeTipoVehiculo(c, nombre, id)) {
+                return badRequest("Ya existe un tipo de vehículo con ese nombre.");
+            }
+            try (PreparedStatement p = c.prepareStatement(
+                    "UPDATE tipo_vehiculo SET nombre=? WHERE id_tipo_vehiculo=?")) {
+                p.setString(1, nombre);
+                p.setInt(2, id);
+                if (p.executeUpdate() == 0) {
+                    return Response.status(Response.Status.NOT_FOUND).entity(
+                            Json.createObjectBuilder().add("mensaje",
+                                    "No se encontró el tipo de vehículo.").build()).build();
+                }
+            }
+            return Response.ok().build();
+        } catch (Exception ex) {
+            return error("No se pudo actualizar el tipo de vehículo.");
+        }
+    }
+
+    @DELETE @Path("tipos-vehiculo/{id}")
+    public Response eliminarTipoVehiculo(@PathParam("id") int id) {
+        if (!admin()) return forbidden();
+        try (Connection c = connection();
+                PreparedStatement p = c.prepareStatement(
+                        "DELETE FROM tipo_vehiculo WHERE id_tipo_vehiculo=?")) {
+            p.setInt(1, id);
+            if (p.executeUpdate() == 0) {
+                return Response.status(Response.Status.NOT_FOUND).entity(
+                        Json.createObjectBuilder().add("mensaje",
+                                "No se encontró el tipo de vehículo.").build()).build();
+            }
+            return Response.noContent().build();
+        } catch (Exception ex) {
+            return error("No se pudo eliminar el tipo de vehículo. Puede estar asignado a vehículos registrados.");
+        }
+    }
+
+    @GET @Path("pagos")
+    public Response pagos() {
+        String sql = "SELECT p.id_pago AS idPago, p.id_infraccion AS idInfraccion, "
+                + "p.fecha_pago AS fechaPago, p.monto_total AS monto, "
+                + "v.placa AS placa, "
+                + "CONCAT(c.nombre, ' ', c.apellido) AS conductor, "
+                + "s.descripcion AS sancion, u.nombre_completo AS registradoPor "
+                + "FROM pago p "
+                + "LEFT JOIN infraccion i ON i.id_infraccion=p.id_infraccion "
+                + "LEFT JOIN vehiculo v ON v.id_vehiculo=i.id_vehiculo "
+                + "LEFT JOIN conductor c ON c.id_conductor=i.id_conductor "
+                + "LEFT JOIN sancion s ON s.id_sancion=i.id_sancion "
+                + "LEFT JOIN usuario u ON u.id_usuario=p.id_usuario "
+                + "ORDER BY p.fecha_pago DESC, p.id_pago DESC";
+        return consulta(sql, "pagos");
     }
 
     @POST @Path("conductores") @Consumes(MediaType.APPLICATION_JSON)
@@ -368,6 +497,58 @@ public class AdminDataResource {
             return Response.ok(Json.createObjectBuilder().add(key, array).build()).build();
         } catch (Exception ex) {
             return error("No se pudieron cargar los datos.");
+        }
+    }
+
+    private boolean existeTipoVehiculo(Connection c, String nombre, int excluirId)
+            throws Exception {
+        String sql = "SELECT 1 FROM tipo_vehiculo "
+                + "WHERE LOWER(TRIM(nombre))=LOWER(TRIM(?)) "
+                + "AND id_tipo_vehiculo<>? LIMIT 1";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, nombre);
+            p.setInt(2, excluirId);
+            try (ResultSet r = p.executeQuery()) {
+                return r.next();
+            }
+        }
+    }
+
+    private Response guardarAgenteTransito(String body, int id) {
+        if (!admin()) return forbidden();
+        String nombre;
+        String apellido;
+        try (JsonReader reader = Json.createReader(new java.io.StringReader(body))) {
+            JsonObject data = reader.readObject();
+            nombre = data.getString("nombre", "").trim();
+            apellido = data.getString("apellido", "").trim();
+        } catch (Exception ex) {
+            return badRequest("Ingresa el nombre y apellido del agente.");
+        }
+        if (nombre.isEmpty() || apellido.isEmpty()) {
+            return badRequest("El nombre y apellido del agente son obligatorios.");
+        }
+        String sql = id == 0
+                ? "INSERT INTO agente_transito (nombre,apellido) VALUES (?,?)"
+                : "UPDATE agente_transito SET nombre=?,apellido=? WHERE id_agente=?";
+        try (Connection c = connection(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, nombre);
+            p.setString(2, apellido);
+            if (id != 0) {
+                p.setInt(3, id);
+                if (p.executeUpdate() == 0) {
+                    return Response.status(Response.Status.NOT_FOUND).entity(
+                            Json.createObjectBuilder().add("mensaje",
+                                    "No se encontró el agente de tránsito.").build()).build();
+                }
+            } else {
+                p.executeUpdate();
+            }
+            return Response.ok().build();
+        } catch (Exception ex) {
+            return error(id == 0
+                    ? "No se pudo crear el agente de tránsito."
+                    : "No se pudo actualizar el agente de tránsito.");
         }
     }
 
