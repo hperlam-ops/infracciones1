@@ -45,12 +45,16 @@ public class InfraccionesResource {
                 + "v.placa, v.marca, v.modelo, "
                 + "CONCAT(c.nombre, ' ', c.apellido) AS conductor, "
                 + "s.descripcion AS sancion, s.costo, "
-                + "CONCAT(a.nombre, ' ', a.apellido) AS agente "
+                + "CONCAT(a.nombre, ' ', a.apellido) AS agente, "
+                + "p.id_pago, p.fecha_pago, p.monto_total, "
+                + "u.nombre_completo AS pago_registrado_por "
                 + "FROM infraccion i "
                 + "LEFT JOIN vehiculo v ON v.id_vehiculo=i.id_vehiculo "
                 + "LEFT JOIN conductor c ON c.id_conductor=i.id_conductor "
                 + "LEFT JOIN sancion s ON s.id_sancion=i.id_sancion "
                 + "LEFT JOIN agente_transito a ON a.id_agente=i.id_agente "
+                + "LEFT JOIN pago p ON p.id_infraccion=i.id_infraccion "
+                + "LEFT JOIN usuario u ON u.id_usuario=p.id_usuario "
                 + "ORDER BY i.fecha DESC, i.id_infraccion DESC";
         List<JsonObject> datos = new ArrayList<>();
         try (Connection connection = conexion();
@@ -72,6 +76,13 @@ public class InfraccionesResource {
                         .add("sancion", texto(result.getString("sancion")))
                         .add("costo", result.getDouble("costo"))
                         .add("agente", texto(result.getString("agente")))
+                        .add("pagada", result.getObject("id_pago") != null)
+                        .add("idPago", result.getObject("id_pago") == null
+                                ? 0 : result.getInt("id_pago"))
+                        .add("fechaPago", texto(result.getTimestamp("fecha_pago")))
+                        .add("montoPagado", result.getObject("monto_total") == null
+                                ? 0 : result.getDouble("monto_total"))
+                        .add("pagoRegistradoPor", texto(result.getString("pago_registrado_por")))
                         .build());
             }
             return Response.ok(datos).build();
