@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="../img/logo.png?v=20261026">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link href="../css/theme.css?v=20261026-4" rel="stylesheet">
     <style>
         .admin-panel { border: 1px solid var(--border); border-radius: 20px; background: white; }
@@ -60,7 +61,71 @@
         let registros = [], editando = null;
         const escapar = valor => String(valor ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
         async function api(url, opciones = {}) { const respuesta = await fetch(`../webresources/infracciones${url}`, { headers: { "Content-Type":"application/json", "Accept":"application/json" }, ...opciones }); const cuerpo = await respuesta.text(); let datos = null; if (cuerpo.trim()) { try { datos = JSON.parse(cuerpo); } catch (error) { if (respuesta.ok) throw new Error("El servidor devolvió una respuesta inválida."); } } if (!respuesta.ok) { let mensaje = datos?.mensaje || `El servidor respondió con ${respuesta.status}.`; if (!datos && cuerpo.includes("InfraccionesResource")) mensaje += " El módulo no se compiló o no se desplegó correctamente."; throw new Error(mensaje); } return datos; }
-        function renderizar() { const texto = document.getElementById("buscar").value.toLocaleLowerCase("es"); const filas = registros.filter(item => [item.placa,item.conductor,item.sancion,item.agente].some(v => String(v || "").toLocaleLowerCase("es").includes(texto))); tabla.innerHTML = filas.length ? filas.map(item => `<tr><td>#${item.idInfraccion}</td><td>${escapar(item.fecha)}</td><td><strong>${escapar(item.placa)}</strong><br><small>${escapar(item.vehiculo)}</small></td><td>${escapar(item.conductor)}</td><td>${escapar(item.sancion)}</td><td>Q${Number(item.costo).toFixed(2)}</td><td>${escapar(item.agente)}</td><td><button class="btn btn-sm btn-outline-primary me-1" data-editar="${item.idInfraccion}"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" data-eliminar="${item.idInfraccion}"><i class="bi bi-trash"></i></button></td></tr>`).join("") : '<tr><td colspan="8" class="text-center py-4">No hay infracciones.</td></tr>'; }
+        function renderizar() { const texto = document.getElementById("buscar").value.toLocaleLowerCase("es"); const filas = registros.filter(item => [item.placa,item.conductor,item.sancion,item.agente].some(v => String(v || "").toLocaleLowerCase("es").includes(texto))); tabla.innerHTML = filas.length ? filas.map(item => `<tr><td>#${item.idInfraccion}</td><td>${escapar(item.fecha)}</td><td><strong>${escapar(item.placa)}</strong><br><small>${escapar(item.vehiculo)}</small></td><td>${escapar(item.conductor)}</td><td>${escapar(item.sancion)}</td><td>Q${Number(item.costo).toFixed(2)}</td><td>${escapar(item.agente)}</td><td><button class="btn btn-sm btn-outline-secondary me-1" title="Descargar reporte PDF" aria-label="Descargar reporte de infracción ${item.idInfraccion}" data-pdf="${item.idInfraccion}"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-sm btn-outline-primary me-1" title="Editar" data-editar="${item.idInfraccion}"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Eliminar" data-eliminar="${item.idInfraccion}"><i class="bi bi-trash"></i></button></td></tr>`).join("") : '<tr><td colspan="8" class="text-center py-4">No hay infracciones.</td></tr>'; }
+        function agregarLinea(doc, y, etiqueta, valor) {
+            const texto = `${etiqueta}: ${valor || "No registrado"}`;
+            const lineas = doc.splitTextToSize(texto, 175);
+            doc.text(lineas, 18, y);
+            return y + (lineas.length * 6);
+        }
+        function descargarReporteInfraccion(item) {
+            if (!window.jspdf?.jsPDF) {
+                alerta.innerHTML = '<div class="alert alert-danger">No se pudo cargar el generador de PDF. Recarga la página e inténtalo nuevamente.</div>';
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let y = 20;
+            doc.setFontSize(18);
+            doc.text("Reporte de infracción", 18, y);
+            doc.setFontSize(10);
+            y += 8;
+            doc.text(`Generado: ${new Date().toLocaleString("es-GT")}`, 18, y);
+            doc.setDrawColor(31, 78, 121);
+            doc.line(18, y + 4, 192, y + 4);
+            y += 14;
+            doc.setFontSize(13);
+            doc.text(`Infracción #${item.idInfraccion}`, 18, y);
+            doc.setFontSize(10);
+            y += 9;
+            y = agregarLinea(doc, y, "Fecha de la infracción", item.fecha);
+            y = agregarLinea(doc, y, "Observaciones", item.observaciones);
+            y += 4;
+            doc.setFontSize(12);
+            doc.text("Vehículo", 18, y);
+            doc.setFontSize(10);
+            y += 7;
+            y = agregarLinea(doc, y, "Placa", item.placa);
+            y = agregarLinea(doc, y, "Marca y modelo", item.vehiculo);
+            y += 4;
+            doc.setFontSize(12);
+            doc.text("Conductor", 18, y);
+            doc.setFontSize(10);
+            y += 7;
+            y = agregarLinea(doc, y, "Nombre", item.conductor);
+            y = agregarLinea(doc, y, "Identificador", item.idConductor);
+            y += 4;
+            doc.setFontSize(12);
+            doc.text("Sanción y agente", 18, y);
+            doc.setFontSize(10);
+            y += 7;
+            y = agregarLinea(doc, y, "Sanción", item.sancion);
+            y = agregarLinea(doc, y, "Costo", `Q${Number(item.costo || 0).toFixed(2)}`);
+            y = agregarLinea(doc, y, "Agente de tránsito", item.agente);
+            y += 4;
+            doc.setFontSize(12);
+            doc.text("Pago", 18, y);
+            doc.setFontSize(10);
+            y += 7;
+            y = agregarLinea(doc, y, "Estado", item.pagada ? "Pagada" : "Pendiente");
+            if (item.pagada) {
+                y = agregarLinea(doc, y, "Fecha de pago", item.fechaPago);
+                y = agregarLinea(doc, y, "Monto pagado", `Q${Number(item.montoPagado || item.costo || 0).toFixed(2)}`);
+                y = agregarLinea(doc, y, "Registrado por", item.pagoRegistradoPor);
+                y = agregarLinea(doc, y, "ID de pago", item.idPago);
+            }
+            doc.save(`reporte-infraccion-${item.idInfraccion}.pdf`);
+        }
         function llenarSelect(id, datos) { document.getElementById(id).innerHTML = '<option value="">Selecciona una opción</option>' + datos.map(item => `<option value="${item.id}">${escapar(item.nombre)}</option>`).join(""); }
         async function buscarVehiculoPorPlaca() { const placa = document.getElementById("placa").value.trim(); if (!placa) { alerta.innerHTML = '<div class="alert alert-warning">Ingresa una placa para buscar.</div>'; return; } try { const datos = await api(`/vehiculo-por-placa?placa=${encodeURIComponent(placa)}`); document.getElementById("idVehiculo").value = datos.idVehiculo; document.getElementById("vehiculoInfo").textContent = `Vehículo: ${datos.vehiculo} (${datos.placa})`; if (!datos.idConductor) throw new Error("El vehículo existe, pero no tiene un conductor relacionado en la base de datos."); document.getElementById("idConductor").value = datos.idConductor; document.getElementById("conductor").value = datos.conductor; alerta.innerHTML = '<div class="alert alert-success">Vehículo y conductor encontrados.</div>'; } catch (error) { document.getElementById("idVehiculo").value = ""; document.getElementById("idConductor").value = ""; document.getElementById("conductor").value = ""; document.getElementById("vehiculoInfo").textContent = "No se pudo relacionar la placa."; alerta.innerHTML = `<div class="alert alert-danger">${escapar(error.message)}</div>`; } }
         async function cargar() { try { const [datos, catalogos] = await Promise.all([api(""), api("/catalogos")]); registros = datos; llenarSelect("sancion", catalogos.sanciones); llenarSelect("agente", catalogos.agentes); renderizar(); } catch (error) { alerta.innerHTML = `<div class="alert alert-danger">${escapar(error.message)}</div>`; tabla.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">No se pudo cargar el módulo.</td></tr>'; } }
@@ -70,7 +135,7 @@
         document.getElementById("cancelar").onclick = () => panel.hidden = true;
         document.getElementById("buscar").oninput = renderizar;
         formulario.onsubmit = async event => { event.preventDefault(); const fecha = document.getElementById("fecha").value.replace("T", " ") + ":00"; const datos = { idVehiculo:+document.getElementById("idVehiculo").value, idConductor:+document.getElementById("idConductor").value, idSancion:+document.getElementById("sancion").value, idAgente:+document.getElementById("agente").value, fecha, observaciones:document.getElementById("observaciones").value.trim() }; if (!datos.idVehiculo || !datos.idConductor) { alerta.innerHTML = '<div class="alert alert-warning">Busca una placa válida antes de guardar.</div>'; return; } try { await api(editando ? `/${editando}` : "", { method: editando ? "PUT" : "POST", body:JSON.stringify(datos) }); panel.hidden = true; await cargar(); } catch (error) { alerta.innerHTML = `<div class="alert alert-danger">${escapar(error.message)}</div>`; } };
-        tabla.onclick = async event => { const editar = event.target.closest("[data-editar]"), eliminar = event.target.closest("[data-eliminar]"); if (editar) { const item = registros.find(i => String(i.idInfraccion) === editar.dataset.editar); editando = item.idInfraccion; document.getElementById("idVehiculo").value=item.idVehiculo; document.getElementById("idConductor").value=item.idConductor; document.getElementById("placa").value=item.placa; document.getElementById("conductor").value=item.conductor; document.getElementById("vehiculoInfo").textContent=`Vehículo: ${item.vehiculo} (${item.placa})`; sancion.value=item.idSancion; agente.value=item.idAgente; document.getElementById("fecha").value=item.fecha.replace(" ", "T").slice(0,16); document.getElementById("observaciones").value=item.observaciones; document.getElementById("tituloFormulario").textContent=`Editar infracción #${editando}`; panel.hidden=false; panel.scrollIntoView({behavior:"smooth"}); } if (eliminar && confirm("¿Deseas eliminar esta infracción?")) { try { await api(`/${eliminar.dataset.eliminar}`, {method:"DELETE"}); await cargar(); } catch(error) { alerta.innerHTML = `<div class="alert alert-danger">${escapar(error.message)}</div>`; } } };
+        tabla.onclick = async event => { const pdf = event.target.closest("[data-pdf]"), editar = event.target.closest("[data-editar]"), eliminar = event.target.closest("[data-eliminar]"); if (pdf) { const item = registros.find(i => String(i.idInfraccion) === pdf.dataset.pdf); if (item) descargarReporteInfraccion(item); return; } if (editar) { const item = registros.find(i => String(i.idInfraccion) === editar.dataset.editar); editando = item.idInfraccion; document.getElementById("idVehiculo").value=item.idVehiculo; document.getElementById("idConductor").value=item.idConductor; document.getElementById("placa").value=item.placa; document.getElementById("conductor").value=item.conductor; document.getElementById("vehiculoInfo").textContent=`Vehículo: ${item.vehiculo} (${item.placa})`; sancion.value=item.idSancion; agente.value=item.idAgente; document.getElementById("fecha").value=item.fecha.replace(" ", "T").slice(0,16); document.getElementById("observaciones").value=item.observaciones; document.getElementById("tituloFormulario").textContent=`Editar infracción #${editando}`; panel.hidden=false; panel.scrollIntoView({behavior:"smooth"}); } if (eliminar && confirm("¿Deseas eliminar esta infracción?")) { try { await api(`/${eliminar.dataset.eliminar}`, {method:"DELETE"}); await cargar(); } catch(error) { alerta.innerHTML = `<div class="alert alert-danger">${escapar(error.message)}</div>`; } } };
         cargar();
     </script>
 </body>
