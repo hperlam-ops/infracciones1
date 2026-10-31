@@ -159,6 +159,9 @@
         const identificadorInput = document.getElementById("identificador");
         const confirmarPagoForm = document.getElementById("confirmarPagoForm");
         const codigoPagoInput = document.getElementById("codigoPago");
+        const formatoMoneda = new Intl.NumberFormat("es-GT", {
+            style: "currency", currency: "GTQ"
+        });
         function escapar(valor) {
             return String(valor ?? "").replace(/[&<>"']/g, caracter => ({
                 "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -180,7 +183,7 @@
                  <strong>Sanción:</strong> ${escapar(infraccion.sancion)}<br>
                  <strong>Vehículo:</strong> ${escapar(infraccion.placa)} -
                  ${escapar(infraccion.marca)} ${escapar(infraccion.modelo)}<br>
-                 <strong>Monto:</strong> $${Number(infraccion.costo).toFixed(2)}<br>
+                 <strong>Monto:</strong> ${formatoMoneda.format(Number(infraccion.costo) || 0)}<br>
                  <strong>Fecha:</strong> ${escapar(infraccion.fecha)}<br>
                  <strong>Código de pago bancario:</strong> ${escapar(datos.codigoPago)}<br>
                  <em>Este código es una simulación y solo se puede confirmar desde esta sesión.</em>`;
@@ -248,7 +251,7 @@
                             Conductor: ${escapar(infraccion.nombreConductor)}
                             ${escapar(infraccion.apellidoConductor)}
                         </p>
-                        <p class="fs-5 fw-semibold mb-3">$${Number(infraccion.costo).toFixed(2)}</p>
+                        <p class="fs-5 fw-semibold mb-3">${formatoMoneda.format(Number(infraccion.costo) || 0)}</p>
                         ${infraccion.pagada ? "" : `<button class="btn btn-primary btn-sm" data-voucher="${infraccion.idInfraccion}">
                             <i class="bi bi-receipt me-1"></i>Generar voucher
                         </button>`}

@@ -90,11 +90,19 @@
                 <input type="hidden" id="agenteId">
                 <div class="col-12 col-md-6">
                     <label class="form-label" for="nombre">Nombre</label>
-                    <input class="form-control" id="nombre" name="nombre" required maxlength="100" autocomplete="given-name">
+                    <input class="form-control" id="nombre" name="nombre" required maxlength="50" autocomplete="given-name">
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label" for="apellido">Apellido</label>
-                    <input class="form-control" id="apellido" name="apellido" required maxlength="100" autocomplete="family-name">
+                    <input class="form-control" id="apellido" name="apellido" required maxlength="50" autocomplete="family-name">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="codigo">Código</label>
+                    <input class="form-control" id="codigo" name="codigo" required maxlength="20" autocomplete="off">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="telefono">Teléfono</label>
+                    <input class="form-control" id="telefono" name="telefono" type="tel" maxlength="20" autocomplete="tel">
                 </div>
                 <div class="col-12 d-flex flex-wrap gap-2">
                     <button class="btn btn-primary" type="submit" id="guardar">
@@ -132,11 +140,13 @@
                         <tr>
                             <th scope="col">ID</th>
                             <th scope="col">Nombre completo</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Teléfono</th>
                             <th scope="col" class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="agentesBody">
-                        <tr><td colspan="3" class="text-center text-secondary py-5"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando agentes...</td></tr>
+                        <tr><td colspan="5" class="text-center text-secondary py-5"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando agentes...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -163,6 +173,8 @@
         const agenteId = document.getElementById("agenteId");
         const nombre = document.getElementById("nombre");
         const apellido = document.getElementById("apellido");
+        const codigo = document.getElementById("codigo");
+        const telefono = document.getElementById("telefono");
         const alerta = document.getElementById("alerta");
         const resultados = document.getElementById("resultados");
         let agentes = [];
@@ -212,6 +224,8 @@
                 ? filtrados.map(agente => `<tr>
                     <td class="agent-id">#${escapar(agente.id_agente)}</td>
                     <td class="fw-semibold">${escapar(`${agente.nombre || ""} ${agente.apellido || ""}`.trim())}</td>
+                    <td>${escapar(agente.codigo)}</td>
+                    <td>${escapar(agente.telefono)}</td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-primary me-1" type="button"
                                 data-editar="${escapar(agente.id_agente)}" aria-label="Editar agente ${escapar(agente.nombre)}">
@@ -223,7 +237,7 @@
                         </button>
                     </td>
                 </tr>`).join("")
-                : `<tr><td colspan="3" class="text-center text-secondary py-5">
+                : `<tr><td colspan="5" class="text-center text-secondary py-5">
                     ${agentes.length ? "No se encontraron agentes con ese criterio." : "Todavía no hay agentes registrados."}
                 </td></tr>`;
             document.getElementById("totalAgentes").textContent = agentes.length.toLocaleString("es-GT");
@@ -235,6 +249,8 @@
             agenteId.value = agente ? agente.id_agente : "";
             nombre.value = agente ? agente.nombre : "";
             apellido.value = agente ? agente.apellido : "";
+            codigo.value = agente ? agente.codigo : "";
+            telefono.value = agente ? agente.telefono : "";
             document.getElementById("formularioTitulo").textContent =
                 agente ? "Editar agente" : "Nuevo agente";
             document.getElementById("formularioDescripcion").textContent = agente
@@ -270,7 +286,7 @@
                 agentes = [];
                 renderizar();
                 document.getElementById("totalAgentes").textContent = "—";
-                agentesBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-5">No se pudo cargar el listado. Intenta actualizar nuevamente.</td></tr>';
+                agentesBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-5">No se pudo cargar el listado. Intenta actualizar nuevamente.</td></tr>';
                 resultados.textContent = "No se pudo cargar el listado.";
                 mostrarAlerta("danger", error.message);
             } finally {
@@ -283,6 +299,8 @@
         document.getElementById("limpiar").addEventListener("click", () => {
             nombre.value = "";
             apellido.value = "";
+            codigo.value = "";
+            telefono.value = "";
             nombre.focus();
         });
         document.getElementById("buscar").addEventListener("input", renderizar);
@@ -324,9 +342,14 @@
         formulario.addEventListener("submit", async evento => {
             evento.preventDefault();
             if (guardando) return;
-            const datos = { nombre: nombre.value.trim(), apellido: apellido.value.trim() };
-            if (!datos.nombre || !datos.apellido) {
-                mostrarAlerta("warning", "El nombre y apellido del agente son obligatorios.");
+            const datos = {
+                nombre: nombre.value.trim(),
+                apellido: apellido.value.trim(),
+                codigo: codigo.value.trim(),
+                telefono: telefono.value.trim()
+            };
+            if (!datos.nombre || !datos.apellido || !datos.codigo) {
+                mostrarAlerta("warning", "El nombre, apellido y código del agente son obligatorios.");
                 return;
             }
             guardando = true;

@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -26,6 +28,9 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class AdminDataResource {
 
+    private static final Logger LOGGER =
+            Logger.getLogger(AdminDataResource.class.getName());
+
     @Context private HttpServletRequest request;
 
     @GET @Path("conductores")
@@ -36,7 +41,7 @@ public class AdminDataResource {
 
     @GET @Path("agentes-transito")
     public Response agentesTransito() {
-        return consulta("SELECT id_agente,nombre,apellido FROM agente_transito "
+        return consulta("SELECT id_agente,nombre,apellido,codigo,telefono FROM agente_transito "
                 + "ORDER BY apellido,nombre", "agentes");
     }
 
@@ -518,37 +523,65 @@ public class AdminDataResource {
         if (!admin()) return forbidden();
         String nombre;
         String apellido;
+        String codigo;
+        String telefono;
         try (JsonReader reader = Json.createReader(new java.io.StringReader(body))) {
             JsonObject data = reader.readObject();
             nombre = data.getString("nombre", "").trim();
             apellido = data.getString("apellido", "").trim();
+            codigo = data.getString("codigo", "").trim();
+            telefono = data.getString("telefono", "").trim();
         } catch (Exception ex) {
-            return badRequest("Ingresa el nombre y apellido del agente.");
+            return badRequest("Ingresa los datos válidos del agente.");
         }
-        if (nombre.isEmpty() || apellido.isEmpty()) {
-            return badRequest("El nombre y apellido del agente son obligatorios.");
+        if (nombre.isEmpty() || apellido.isEmpty() || codigo.isEmpty()) {
+            return badRequest("El nombre, apellido y código del agente son obligatorios.");
+        }
+        if (nombre.length() > 50 || apellido.length() > 50
+                || codigo.length() > 20 || telefono.length() > 20) {
+            return badRequest("Verifica la longitud de los datos del agente.");
         }
         String sql = id == 0
-                ? "INSERT INTO agente_transito (nombre,apellido) VALUES (?,?)"
-                : "UPDATE agente_transito SET nombre=?,apellido=? WHERE id_agente=?";
-        try (Connection c = connection(); PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, nombre);
-            p.setString(2, apellido);
-            if (id != 0) {
-                p.setInt(3, id);
-                if (p.executeUpdate() == 0) {
-                    return Response.status(Response.Status.NOT_FOUND).entity(
-                            Json.createObjectBuilder().add("mensaje",
-                                    "No se encontró el agente de tránsito.").build()).build();
-                }
-            } else {
-                p.executeUpdate();
+                ? "INSERT INTO agente_transito (nombre,apellido,codigo,telefono) VALUES (?,?,?,?)"
+                : "UPDATE agente_transito SET nombre=?,apellido=?,codigo=?,telefono=? WHERE id_agente=?";
+        try (Connection c = connection()) {
+            if (existeCodigoAgente(c, codigo, id)) {
+                return badRequest("Ya existe un agente con ese código.");
             }
-            return Response.ok().build();
+            try (PreparedStatement p = c.prepareStatement(sql)) {
+                p.setString(1, nombre);
+                p.setString(2, apellido);
+                p.setString(3, codigo);
+                p.setString(4, telefono);
+                if (id != 0) {
+                    p.setInt(5, id);
+                    if (p.executeUpdate() == 0) {
+                        return Response.status(Response.Status.NOT_FOUND).entity(
+                                Json.createObjectBuilder().add("mensaje",
+                                        "No se encontró el agente de tránsito.").build()).build();
+                    }
+                } else {
+                    p.executeUpdate();
+                }
+                return Response.ok().build();
+            }
         } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "No se pudo guardar el agente de tránsito.", ex);
             return error(id == 0
                     ? "No se pudo crear el agente de tránsito."
                     : "No se pudo actualizar el agente de tránsito.");
+        }
+    }
+
+    private boolean existeCodigoAgente(Connection c, String codigo, int excluirId)
+            throws Exception {
+        String sql = "SELECT 1 FROM agente_transito WHERE codigo=? AND id_agente<>? LIMIT 1";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, codigo);
+            p.setInt(2, excluirId);
+            try (ResultSet r = p.executeQuery()) {
+                return r.next();
+            }
         }
     }
 
