@@ -49,7 +49,7 @@ public class PortalUsuarioResource {
         String sql = "SELECT i.id_infraccion, i.fecha, i.observaciones, "
                 + "s.descripcion AS sancion, s.costo, v.placa, v.marca, v.modelo, v.color, "
                 + "c.id_conductor, c.nombre AS nombre_conductor, c.apellido AS apellido_conductor, "
-                + "c.dpi, c.licencia, c.telefono, c.direccion, "
+                + "c.dpi, "
                 + "p.id_pago, p.fecha_pago, p.monto_total "
                 + "FROM infraccion i "
                 + "LEFT JOIN sancion s ON s.id_sancion=i.id_sancion "
@@ -70,8 +70,7 @@ public class PortalUsuarioResource {
                         conductor = new Conductor(result.getInt("id_conductor"),
                                 result.getString("nombre_conductor"),
                                 result.getString("apellido_conductor"),
-                                result.getString("dpi"), result.getString("licencia"),
-                                result.getString("telefono"), result.getString("direccion"));
+                                result.getString("dpi"));
                     }
                     infracciones.add(new PortalInfraccion(result.getInt("id_infraccion"),
                             result.getTimestamp("fecha"), result.getString("observaciones"),
@@ -104,7 +103,7 @@ public class PortalUsuarioResource {
 
     private Conductor buscarConductorPorDpi(Connection connection, String identificador)
             throws Exception {
-        String sql = "SELECT id_conductor,nombre,apellido,dpi,licencia,telefono,direccion "
+        String sql = "SELECT id_conductor,nombre,apellido,dpi "
                 + "FROM conductor WHERE LOWER(TRIM(dpi))=LOWER(TRIM(?)) LIMIT 1";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, identificador);
@@ -112,8 +111,7 @@ public class PortalUsuarioResource {
                 if (!result.next()) return null;
                 return new Conductor(result.getInt("id_conductor"),
                         result.getString("nombre"), result.getString("apellido"),
-                        result.getString("dpi"), result.getString("licencia"),
-                        result.getString("telefono"), result.getString("direccion"));
+                        result.getString("dpi"));
             }
         }
     }
@@ -295,24 +293,16 @@ public class PortalUsuarioResource {
         private final String nombre;
         private final String apellido;
         private final String dpi;
-        private final String licencia;
-        private final String telefono;
-        private final String direccion;
 
-        public Conductor(int id, String nombre, String apellido, String dpi,
-                String licencia, String telefono, String direccion) {
+        public Conductor(int id, String nombre, String apellido, String dpi) {
             this.id = id; this.nombre = nombre; this.apellido = apellido;
-            this.dpi = dpi; this.licencia = licencia;
-            this.telefono = telefono; this.direccion = direccion;
+            this.dpi = dpi;
         }
 
         public int getId() { return id; }
         public String getNombre() { return nombre; }
         public String getApellido() { return apellido; }
         public String getDpi() { return dpi; }
-        public String getLicencia() { return licencia; }
-        public String getTelefono() { return telefono; }
-        public String getDireccion() { return direccion; }
     }
 
     public static class PortalInfraccion {

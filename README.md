@@ -43,9 +43,11 @@ La interfaz está diseñada con Bootstrap 5 y JavaScript, mientras que el backen
 ### Portal de usuario y pagos beta
 
 - Consulta de infracciones por placa o DPI.
-- Visualización de datos del conductor aunque no tenga infracciones.
+- Visualización limitada al nombre y DPI del conductor; no se exponen teléfono,
+  licencia ni dirección en el portal.
 - Generación de vouchers de pago simulados.
 - Confirmación simulada del pago y conservación del historial de la infracción.
+- Reportes PDF con formato institucional para vehículos e infracciones.
 
 ### Autenticación
 

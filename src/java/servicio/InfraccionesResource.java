@@ -43,7 +43,7 @@ public class InfraccionesResource {
         String sql = "SELECT i.id_infraccion, i.fecha, i.observaciones, "
                 + "i.id_vehiculo, i.id_conductor, i.id_sancion, i.id_agente, "
                 + "v.placa, v.marca, v.modelo, "
-                + "CONCAT(c.nombre, ' ', c.apellido) AS conductor, "
+                + "CONCAT(c.nombre, ' ', c.apellido) AS conductor, c.dpi, "
                 + "s.descripcion AS sancion, s.costo, "
                 + "CONCAT(a.nombre, ' ', a.apellido) AS agente, "
                 + "p.id_pago, p.fecha_pago, p.monto_total, "
@@ -73,6 +73,7 @@ public class InfraccionesResource {
                         .add("vehiculo", texto(result.getString("marca")) + " "
                                 + texto(result.getString("modelo")))
                         .add("conductor", texto(result.getString("conductor")))
+                        .add("dpi", texto(result.getString("dpi")))
                         .add("sancion", texto(result.getString("sancion")))
                         .add("costo", result.getDouble("costo"))
                         .add("agente", texto(result.getString("agente")))

@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <link href="../css/theme.css?v=20261026-4" rel="stylesheet">
+    <link href="../css/theme.css?v=20261030-2" rel="stylesheet">
     <style>
         .admin-panel { border: 1px solid var(--border); border-radius: 20px; background: white; }
         .table td, .table th { white-space: nowrap; }
@@ -32,7 +32,7 @@
     </nav>
     <main class="container">
         <div class="breadcrumb-label"><i class="bi bi-file-earmark-text"></i> Panel de administración <span>/</span><span class="text-dark">Infracciones</span></div>
-        <div class="page-heading"><div><h1>Infracciones</h1><p>Registra y administra las infracciones con sus datos relacionados.</p></div><button class="btn btn-primary" id="nueva"><i class="bi bi-plus-lg me-1"></i>Nueva infracción</button></div>
+        <section class="view-hero" aria-labelledby="infraccionesPageTitle"><div class="view-hero-content d-flex flex-wrap justify-content-between align-items-center gap-4"><div><p class="eyebrow mb-2"><i class="bi bi-grid-1x2 me-1" aria-hidden="true"></i>Gestión de tránsito</p><h1 id="infraccionesPageTitle">Infracciones</h1><p class="page-description">Registra y administra las infracciones con sus datos relacionados.</p></div><button class="btn btn-primary" id="nueva"><i class="bi bi-plus-lg me-1"></i>Nueva infracción</button></div></section>
         <div id="alerta" role="alert"></div>
         <section class="admin-panel p-4 mb-4" id="formularioPanel" hidden>
             <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="h5 mb-1" id="tituloFormulario">Nueva infracción</h2><p class="text-secondary mb-0">Completa la información del registro.</p></div><button class="btn btn-sm btn-outline-secondary" id="cancelar">Cancelar</button></div>
@@ -62,11 +62,55 @@
         const escapar = valor => String(valor ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
         async function api(url, opciones = {}) { const respuesta = await fetch(`../webresources/infracciones${url}`, { headers: { "Content-Type":"application/json", "Accept":"application/json" }, ...opciones }); const cuerpo = await respuesta.text(); let datos = null; if (cuerpo.trim()) { try { datos = JSON.parse(cuerpo); } catch (error) { if (respuesta.ok) throw new Error("El servidor devolvió una respuesta inválida."); } } if (!respuesta.ok) { let mensaje = datos?.mensaje || `El servidor respondió con ${respuesta.status}.`; if (!datos && cuerpo.includes("InfraccionesResource")) mensaje += " El módulo no se compiló o no se desplegó correctamente."; throw new Error(mensaje); } return datos; }
         function renderizar() { const texto = document.getElementById("buscar").value.toLocaleLowerCase("es"); const filas = registros.filter(item => [item.placa,item.conductor,item.sancion,item.agente].some(v => String(v || "").toLocaleLowerCase("es").includes(texto))); tabla.innerHTML = filas.length ? filas.map(item => `<tr><td>#${item.idInfraccion}</td><td>${escapar(item.fecha)}</td><td><strong>${escapar(item.placa)}</strong><br><small>${escapar(item.vehiculo)}</small></td><td>${escapar(item.conductor)}</td><td>${escapar(item.sancion)}</td><td>Q${Number(item.costo).toFixed(2)}</td><td>${escapar(item.agente)}</td><td><button class="btn btn-sm btn-outline-secondary me-1" title="Descargar reporte PDF" aria-label="Descargar reporte de infracción ${item.idInfraccion}" data-pdf="${item.idInfraccion}"><i class="bi bi-file-earmark-pdf"></i></button><button class="btn btn-sm btn-outline-primary me-1" title="Editar" data-editar="${item.idInfraccion}"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Eliminar" data-eliminar="${item.idInfraccion}"><i class="bi bi-trash"></i></button></td></tr>`).join("") : '<tr><td colspan="8" class="text-center py-4">No hay infracciones.</td></tr>'; }
+        function prepararPDF(doc, titulo, subtitulo) {
+            doc.setFillColor(16, 36, 58);
+            doc.rect(0, 0, 210, 34, "F");
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(19);
+            doc.text("INFRACCIONES", 18, 15);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text("Sistema de gestión de tránsito", 18, 23);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text(titulo, 192, 15, { align: "right" });
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.text(subtitulo, 192, 23, { align: "right" });
+            doc.setTextColor(22, 43, 67);
+            return 48;
+        }
+        function piePDF(doc) {
+            const paginas = doc.internal.getNumberOfPages();
+            for (let pagina = 1; pagina <= paginas; pagina++) {
+                doc.setPage(pagina);
+                doc.setDrawColor(220, 228, 239);
+                doc.line(18, 285, 192, 285);
+                doc.setFontSize(8);
+                doc.setTextColor(96, 112, 135);
+                doc.text("Documento informativo · Generado el " + new Date().toLocaleString("es-GT"), 18, 292);
+                doc.text(`Página ${pagina} de ${paginas}`, 192, 292, { align: "right" });
+            }
+        }
+        function agregarSeccion(doc, y, titulo) {
+            doc.setFillColor(237, 243, 255);
+            doc.roundedRect(18, y - 6, 174, 11, 3, 3, "F");
+            doc.setTextColor(24, 90, 219);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text(titulo.toUpperCase(), 24, y + 1);
+            doc.setTextColor(22, 43, 67);
+            return y + 17;
+        }
         function agregarLinea(doc, y, etiqueta, valor) {
-            const texto = `${etiqueta}: ${valor || "No registrado"}`;
-            const lineas = doc.splitTextToSize(texto, 175);
-            doc.text(lineas, 18, y);
-            return y + (lineas.length * 6);
+            const lineas = doc.splitTextToSize(String(valor || "No registrado"), 125);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text(etiqueta, 24, y);
+            doc.setFont("helvetica", "normal");
+            doc.text(lineas, 78, y);
+            return y + Math.max(6, lineas.length * 5);
         }
         function descargarReporteInfraccion(item) {
             if (!window.jspdf?.jsPDF) {
@@ -75,48 +119,25 @@
             }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            let y = 20;
-            doc.setFontSize(18);
-            doc.text("Reporte de infracción", 18, y);
-            doc.setFontSize(10);
-            y += 8;
-            doc.text(`Generado: ${new Date().toLocaleString("es-GT")}`, 18, y);
-            doc.setDrawColor(31, 78, 121);
-            doc.line(18, y + 4, 192, y + 4);
-            y += 14;
-            doc.setFontSize(13);
-            doc.text(`Infracción #${item.idInfraccion}`, 18, y);
-            doc.setFontSize(10);
-            y += 9;
+            let y = prepararPDF(doc, "Reporte de infracción", `Registro #${item.idInfraccion}`);
+            y = agregarSeccion(doc, y, `Infracción #${item.idInfraccion}`);
             y = agregarLinea(doc, y, "Fecha de la infracción", item.fecha);
             y = agregarLinea(doc, y, "Observaciones", item.observaciones);
-            y += 4;
-            doc.setFontSize(12);
-            doc.text("Vehículo", 18, y);
-            doc.setFontSize(10);
-            y += 7;
+            y += 6;
+            y = agregarSeccion(doc, y, "Vehículo");
             y = agregarLinea(doc, y, "Placa", item.placa);
             y = agregarLinea(doc, y, "Marca y modelo", item.vehiculo);
-            y += 4;
-            doc.setFontSize(12);
-            doc.text("Conductor", 18, y);
-            doc.setFontSize(10);
-            y += 7;
+            y += 6;
+            y = agregarSeccion(doc, y, "Conductor");
             y = agregarLinea(doc, y, "Nombre", item.conductor);
-            y = agregarLinea(doc, y, "Identificador", item.idConductor);
-            y += 4;
-            doc.setFontSize(12);
-            doc.text("Sanción y agente", 18, y);
-            doc.setFontSize(10);
-            y += 7;
+            y = agregarLinea(doc, y, "DPI", item.dpi);
+            y += 6;
+            y = agregarSeccion(doc, y, "Sanción y agente");
             y = agregarLinea(doc, y, "Sanción", item.sancion);
             y = agregarLinea(doc, y, "Costo", `Q${Number(item.costo || 0).toFixed(2)}`);
             y = agregarLinea(doc, y, "Agente de tránsito", item.agente);
-            y += 4;
-            doc.setFontSize(12);
-            doc.text("Pago", 18, y);
-            doc.setFontSize(10);
-            y += 7;
+            y += 6;
+            y = agregarSeccion(doc, y, "Pago");
             y = agregarLinea(doc, y, "Estado", item.pagada ? "Pagada" : "Pendiente");
             if (item.pagada) {
                 y = agregarLinea(doc, y, "Fecha de pago", item.fechaPago);
@@ -124,6 +145,7 @@
                 y = agregarLinea(doc, y, "Registrado por", item.pagoRegistradoPor);
                 y = agregarLinea(doc, y, "ID de pago", item.idPago);
             }
+            piePDF(doc);
             doc.save(`reporte-infraccion-${item.idInfraccion}.pdf`);
         }
         function llenarSelect(id, datos) { document.getElementById(id).innerHTML = '<option value="">Selecciona una opción</option>' + datos.map(item => `<option value="${item.id}">${escapar(item.nombre)}</option>`).join(""); }

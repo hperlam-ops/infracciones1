@@ -14,6 +14,7 @@ function obtenerUsuarioSesion() {
 }
 
 function inicializarSesion() {
+    inicializarTema();
     const usuario = obtenerUsuarioSesion();
     if (!usuario) return;
     document.querySelectorAll("[data-nombre-usuario]").forEach(elemento => {
@@ -37,4 +38,28 @@ function inicializarSesion() {
             });
         });
     });
+}
+
+function inicializarTema() {
+    const guardado = localStorage.getItem("tema");
+    const oscuro = guardado === "oscuro";
+    document.body.dataset.theme = oscuro ? "dark" : "light";
+    document.querySelectorAll("[data-tema-toggle]").forEach(boton => boton.remove());
+    const acciones = document.querySelector(".session-actions");
+    if (!acciones) return;
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "btn btn-outline-light btn-sm theme-toggle";
+    boton.dataset.temaToggle = "true";
+    boton.setAttribute("aria-label", oscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+    boton.title = boton.getAttribute("aria-label");
+    boton.innerHTML = oscuro
+        ? '<i class="bi bi-sun" aria-hidden="true"></i><span class="d-none d-md-inline">Claro</span>'
+        : '<i class="bi bi-moon-stars" aria-hidden="true"></i><span class="d-none d-md-inline">Oscuro</span>';
+    boton.addEventListener("click", () => {
+        const nuevoTema = document.body.dataset.theme === "dark" ? "claro" : "oscuro";
+        localStorage.setItem("tema", nuevoTema);
+        inicializarTema();
+    });
+    acciones.prepend(boton);
 }

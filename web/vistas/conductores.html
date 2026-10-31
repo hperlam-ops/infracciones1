@@ -8,7 +8,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
               integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-        <link href="../css/theme.css?v=20261026-2" rel="stylesheet">
+        <link href="../css/theme.css?v=20261030-2" rel="stylesheet">
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-dark" aria-label="Principal">
@@ -53,15 +53,18 @@
             <div class="breadcrumb-label"><i class="bi bi-person-vcard me-1" aria-hidden="true"></i>
                 Panel de administración <span aria-hidden="true">/</span> <span class="text-dark">Conductores y vehículos</span>
             </div>
-            <div class="page-heading">
+            <section class="view-hero" aria-labelledby="conductoresPageTitle">
+                <div class="view-hero-content d-flex flex-wrap justify-content-between align-items-center gap-4">
                 <div>
-                    <h1>Conductores</h1>
+                    <p class="eyebrow mb-2"><i class="bi bi-grid-1x2 me-1" aria-hidden="true"></i>Gestión de tránsito</p>
+                    <h1 id="conductoresPageTitle">Conductores</h1>
                     <p>Administra conductores y los vehículos asignados a cada uno.</p>
                 </div>
                 <button class="btn btn-primary" id="nuevoConductor" type="button">
                     <i class="bi bi-plus-lg me-1"></i>Nuevo conductor
                 </button>
-            </div>
+                </div>
+            </section>
             <div id="alerta" role="alert"></div>
 
             <!-- ── Tabla de conductores ── -->
